@@ -1,0 +1,82 @@
+[
+    {
+        "SUB CATEGORY":"Road",
+        "ID":"1"
+    },
+    {
+        "SUB CATEGORY":"Bridges",
+        "ID":"2"
+    },
+    {
+        "SUB CATEGORY":"Rhu",
+        "ID":"3"
+    },
+    {
+        "SUB CATEGORY":"Bhs",
+        "ID":"4"
+    },
+    {
+        "SUB CATEGORY":"Medical Facilities",
+        "ID":"5"
+    },
+    {
+        "SUB CATEGORY":"School Facilities",
+        "ID":"6"
+    },
+    {
+        "SUB CATEGORY":"Electrification",
+        "ID":"7"
+    },
+    {
+        "SUB CATEGORY":"Ports",
+        "ID":"8"
+    },
+    {
+        "SUB CATEGORY":"Airports",
+        "ID":"9"
+    },
+    {
+        "SUB CATEGORY":"Irrigation",
+        "ID":"10"
+    },
+    {
+        "SUB CATEGORY":"Water System",
+        "ID":"11"
+    },
+    {
+        "SUB CATEGORY":"PGP Facilities",
+        "ID":"12"
+    },
+    {
+        "SUB CATEGORY":"Agricultural Facilities",
+        "ID":"13"
+    },
+    {
+        "SUB CATEGORY":"Animal Facilities",
+        "ID":"14"
+    },
+    {
+        "SUB CATEGORY":"Covered Court",
+        "ID":"15"
+    },
+    {
+        "SUB CATEGORY":"Drainage",
+        "ID":"16"
+    },
+    {
+        "SUB CATEGORY":"Muliti-Purpose",
+        "ID":"17"
+    },
+    {
+        "SUB CATEGORY":"Other Facilities",
+        "ID":"18"
+    },
+    {
+        "SUB CATEGORY":"Slope Protection",
+        "ID":"19"
+    },
+    {
+        "SUB CATEGORY":"Supply",
+        "ID":"20"
+    }
+]

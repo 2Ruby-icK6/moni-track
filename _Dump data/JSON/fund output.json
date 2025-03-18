@@ -1,0 +1,462 @@
+[
+    {
+        "FUND":"20% Development Fund",
+        "ID":"1"
+    },
+    {
+        "FUND":"20% Development Fund - Re-aligned to SB No. 3",
+        "ID":"2"
+    },
+    {
+        "FUND":"20% Development Fund 2023 - Realigned to SB No. 3",
+        "ID":"3"
+    },
+    {
+        "FUND":"20% Development Fund 2023 - Realigned to SB No. 5",
+        "ID":"4"
+    },
+    {
+        "FUND":"20% Development Fund 2024",
+        "ID":"5"
+    },
+    {
+        "FUND":"20% Development Fund and DOH",
+        "ID":"6"
+    },
+    {
+        "FUND":"20% Development Fund-Savings",
+        "ID":"7"
+    },
+    {
+        "FUND":"2016-DILG - BUB \/ LGSF",
+        "ID":"8"
+    },
+    {
+        "FUND":"2017-DILG - BUB\/LGSF",
+        "ID":"9"
+    },
+    {
+        "FUND":"2024 - DBP Loan Projects (Building)",
+        "ID":"10"
+    },
+    {
+        "FUND":"2024 - DBP Loan Projects (Concreting)",
+        "ID":"11"
+    },
+    {
+        "FUND":"2024 - DBP Loan Projects (Flood Control)",
+        "ID":"12"
+    },
+    {
+        "FUND":"300-22-02-00670",
+        "ID":"13"
+    },
+    {
+        "FUND":"Aborlan Medical Hospital Fund",
+        "ID":"14"
+    },
+    {
+        "FUND":"Aborlan Medicare Hospital",
+        "ID":"15"
+    },
+    {
+        "FUND":"Admin Fund",
+        "ID":"16"
+    },
+    {
+        "FUND":"B2 ROADS17 300-21-11-15968",
+        "ID":"17"
+    },
+    {
+        "FUND":"BF GF PFRNP 24-08-101",
+        "ID":"18"
+    },
+    {
+        "FUND":"BPYC",
+        "ID":"19"
+    },
+    {
+        "FUND":"BUB\/LGSF",
+        "ID":"20"
+    },
+    {
+        "FUND":"Capital outlay",
+        "ID":"21"
+    },
+    {
+        "FUND":"CMGP",
+        "ID":"22"
+    },
+    {
+        "FUND":"COA Fund",
+        "ID":"23"
+    },
+    {
+        "FUND":"Covid-19 Fund SB3",
+        "ID":"24"
+    },
+    {
+        "FUND":"CRGGP Fund",
+        "ID":"25"
+    },
+    {
+        "FUND":"D.A FUND",
+        "ID":"26"
+    },
+    {
+        "FUND":"DBP Loan",
+        "ID":"27"
+    },
+    {
+        "FUND":"Debt Servicing Under 20% DF (2014-2015-2016)",
+        "ID":"28"
+    },
+    {
+        "FUND":"DENR - TIEZA (Trust Fund 2022)",
+        "ID":"29"
+    },
+    {
+        "FUND":"Department of Agriculture",
+        "ID":"30"
+    },
+    {
+        "FUND":"DILG - BUB \/ LGSF",
+        "ID":"31"
+    },
+    {
+        "FUND":"DILG - BUB\/LGSF",
+        "ID":"32"
+    },
+    {
+        "FUND":"DILG -Kalasada Program",
+        "ID":"33"
+    },
+    {
+        "FUND":"Disaster Preparedness Fund (PDRRMO Fund)",
+        "ID":"34"
+    },
+    {
+        "FUND":"DOH",
+        "ID":"35"
+    },
+    {
+        "FUND":"DOH - HFEP",
+        "ID":"36"
+    },
+    {
+        "FUND":"DOH Fund",
+        "ID":"37"
+    },
+    {
+        "FUND":"DOH Fund (Typhoon Odette) - 2021",
+        "ID":"38"
+    },
+    {
+        "FUND":"DOH-Trust Fund",
+        "ID":"39"
+    },
+    {
+        "FUND":"DPWH",
+        "ID":"40"
+    },
+    {
+        "FUND":"Energy Development Program",
+        "ID":"41"
+    },
+    {
+        "FUND":"GAD Fund",
+        "ID":"42"
+    },
+    {
+        "FUND":"General Fund",
+        "ID":"43"
+    },
+    {
+        "FUND":"HDMP - Supplemental Budget No. 3",
+        "ID":"44"
+    },
+    {
+        "FUND":"HDMP Fund",
+        "ID":"45"
+    },
+    {
+        "FUND":"Kalsada",
+        "ID":"46"
+    },
+    {
+        "FUND":"LGSF- DILG CMGP",
+        "ID":"47"
+    },
+    {
+        "FUND":"Livelihood Fund",
+        "ID":"48"
+    },
+    {
+        "FUND":"Local Fund (Support to Muslim Communities)",
+        "ID":"49"
+    },
+    {
+        "FUND":"Locally Funded",
+        "ID":"50"
+    },
+    {
+        "FUND":"Locally Funded - Supplemental Budget No. 6",
+        "ID":"51"
+    },
+    {
+        "FUND":"MOOE",
+        "ID":"52"
+    },
+    {
+        "FUND":"MOOE 2022",
+        "ID":"53"
+    },
+    {
+        "FUND":"MOOE PEO",
+        "ID":"54"
+    },
+    {
+        "FUND":"NA",
+        "ID":"55"
+    },
+    {
+        "FUND":"NHA Fund",
+        "ID":"56"
+    },
+    {
+        "FUND":"NMH Fund",
+        "ID":"57"
+    },
+    {
+        "FUND":"Other fund",
+        "ID":"58"
+    },
+    {
+        "FUND":"PAO Fund (Agri)",
+        "ID":"59"
+    },
+    {
+        "FUND":"PBO - SB. No. 3",
+        "ID":"60"
+    },
+    {
+        "FUND":"PCDP Fund",
+        "ID":"61"
+    },
+    {
+        "FUND":"PCF 2015 (DILG)",
+        "ID":"62"
+    },
+    {
+        "FUND":"PDRRMO - Special Trust Fund",
+        "ID":"63"
+    },
+    {
+        "FUND":"PDRRMO Fund",
+        "ID":"64"
+    },
+    {
+        "FUND":"PEEDO Fund",
+        "ID":"65"
+    },
+    {
+        "FUND":"Performance Challenge Fund",
+        "ID":"66"
+    },
+    {
+        "FUND":"PGO Fund",
+        "ID":"67"
+    },
+    {
+        "FUND":"PGO Fund - Supplemental Budget No. 2",
+        "ID":"68"
+    },
+    {
+        "FUND":"Philippines Veterans Bank Loan",
+        "ID":"69"
+    },
+    {
+        "FUND":"Philippines Veterans Bank Loan 2018",
+        "ID":"70"
+    },
+    {
+        "FUND":"Philippines Veterans Bank Loan 2019",
+        "ID":"71"
+    },
+    {
+        "FUND":"PJMD - PGSO Fund (Supplemental Budget. No. 4)",
+        "ID":"72"
+    },
+    {
+        "FUND":"PJMD Fund",
+        "ID":"73"
+    },
+    {
+        "FUND":"POP Fund",
+        "ID":"74"
+    },
+    {
+        "FUND":"RAC Fund",
+        "ID":"75"
+    },
+    {
+        "FUND":"ROADS 15 300-19-10-18749",
+        "ID":"76"
+    },
+    {
+        "FUND":"Roads and Bridges Dev. Program-TF (2016)",
+        "ID":"77"
+    },
+    {
+        "FUND":"SB No. 6 - Debt Servicing Under 20% DF (2014-2015-2016)",
+        "ID":"78"
+    },
+    {
+        "FUND":"SBDP-NTF-ELCAC 2021",
+        "ID":"79"
+    },
+    {
+        "FUND":"SFVIP",
+        "ID":"80"
+    },
+    {
+        "FUND":"SFVIP 2022",
+        "ID":"81"
+    },
+    {
+        "FUND":"Special Education Fund",
+        "ID":"82"
+    },
+    {
+        "FUND":"Special Education Fund - 2017",
+        "ID":"83"
+    },
+    {
+        "FUND":"Special Education Fund - 2022",
+        "ID":"84"
+    },
+    {
+        "FUND":"SPPH",
+        "ID":"85"
+    },
+    {
+        "FUND":"SPPH Fund",
+        "ID":"86"
+    },
+    {
+        "FUND":"Supplemental Budget",
+        "ID":"87"
+    },
+    {
+        "FUND":"Supplemental Budget No. 1",
+        "ID":"88"
+    },
+    {
+        "FUND":"Supplemental Budget No. 12",
+        "ID":"89"
+    },
+    {
+        "FUND":"Supplemental Budget No. 14",
+        "ID":"90"
+    },
+    {
+        "FUND":"Supplemental Budget No. 2",
+        "ID":"91"
+    },
+    {
+        "FUND":"Supplemental Budget No. 2 POP",
+        "ID":"92"
+    },
+    {
+        "FUND":"Supplemental Budget NO. 3",
+        "ID":"93"
+    },
+    {
+        "FUND":"Supplemental Budget No. 3 HDMP",
+        "ID":"94"
+    },
+    {
+        "FUND":"Supplemental Budget No. 4",
+        "ID":"95"
+    },
+    {
+        "FUND":"Supplemental Budget No. 4 - Tubbataha Fund",
+        "ID":"96"
+    },
+    {
+        "FUND":"Supplemental Budget No. 4 (PCDO)",
+        "ID":"97"
+    },
+    {
+        "FUND":"Supplemental Budget No. 5",
+        "ID":"98"
+    },
+    {
+        "FUND":"Supplemental Budget No. 6",
+        "ID":"99"
+    },
+    {
+        "FUND":"Supplemental Budget No. 8",
+        "ID":"100"
+    },
+    {
+        "FUND":"Supplemental Budget No. 8 - LWC",
+        "ID":"101"
+    },
+    {
+        "FUND":"Supplemental Budget No. 9",
+        "ID":"102"
+    },
+    {
+        "FUND":"Supplemental Budget No.12",
+        "ID":"103"
+    },
+    {
+        "FUND":"Supplemental Budget No.4",
+        "ID":"104"
+    },
+    {
+        "FUND":"Supplmental Budget No. 4 (CSPMP)",
+        "ID":"105"
+    },
+    {
+        "FUND":"TF - DOH HFEP 2014",
+        "ID":"106"
+    },
+    {
+        "FUND":"TF LDRRMF 2021-PO 2615-A",
+        "ID":"107"
+    },
+    {
+        "FUND":"Trust Fund",
+        "ID":"108"
+    },
+    {
+        "FUND":"Trust Fund - (OCD FUNDS)",
+        "ID":"109"
+    },
+    {
+        "FUND":"Trust Fund - DOH",
+        "ID":"110"
+    },
+    {
+        "FUND":"Trust Fund - DOTr",
+        "ID":"111"
+    },
+    {
+        "FUND":"Trust Fund - TIEZA",
+        "ID":"112"
+    },
+    {
+        "FUND":"Trust Fund- Cong. Alvarez",
+        "ID":"113"
+    },
+    {
+        "FUND":"Trust Fund -DOH",
+        "ID":"114"
+    },
+    {
+        "FUND":"Typhoon Odette Financial Assistance (Office of the President) - 100M",
+        "ID":"115"
+    }
+]

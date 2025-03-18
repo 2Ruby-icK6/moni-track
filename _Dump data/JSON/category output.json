@@ -1,0 +1,38 @@
+[
+    {
+        "CATEGORY":"Transportation Facilities",
+        "ID":"1"
+    },
+    {
+        "CATEGORY":"Medical Facilities",
+        "ID":"2"
+    },
+    {
+        "CATEGORY":"Educational Facilities",
+        "ID":"3"
+    },
+    {
+        "CATEGORY":"Power and Energy Development Program",
+        "ID":"4"
+    },
+    {
+        "CATEGORY":"Ports and Airports",
+        "ID":"5"
+    },
+    {
+        "CATEGORY":"Artesian Wells, Reservoir, Pumping and Conduits",
+        "ID":"6"
+    },
+    {
+        "CATEGORY":"Other Facilities",
+        "ID":"7"
+    },
+    {
+        "CATEGORY":"Other Infrastructure",
+        "ID":"8"
+    },
+    {
+        "CATEGORY":"Supply",
+        "ID":"9"
+    }
+]

@@ -1,0 +1,127 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %} Update {% endblock title %}
+
+{% block content %}
+<div class="container-fluid py-3">
+  <div class="card">
+    <div class="card-header pb-0">
+      <div class="d-flex justify-content-between">
+        <p class="mb-0">Select Project</p>
+        <a href="mon/update-history.html" class="btn bg-gradient-info btn-sm ms-auto d-flex gap-1 align-items-center justify-content-center">
+          <i class="ni ni-book-bookmark me-sm-1"></i>
+          <span class="d-sm-inline d-none">Update History</span>
+        </a>
+      </div>
+    </div>
+    <div class="card-body pt-0">
+      <form action="">
+        <div class="row gx-4">
+            <div class="col-md-2">
+            <div class="form-group">
+              <label for="example-text-input" class="form-control-label">Project Number</label>
+              <input class="form-control" value="Select Number">
+            </div>
+          </div>
+          <div class="col-md-10">
+            <div class="form-group">
+              <label for="example-text-input" class="form-control-label">Project Title</label>
+              <input class="form-control" value="Select Title">
+            </div>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-sm bg-gradient-warning d-flex gap-1 align-items-center justify-content-center">
+          <i class="fas fa-search me-sm-1"></i>
+          <span class="d-sm-inline d-none">Find</span></button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid mt-0">
+  <div class="card">
+    <div class="card-header pb-0">
+      <div class="d-flex align-items-center">
+        <p class="mb-0">Update Project</p>
+        <button type="submit" class="btn btn-sm bg-gradient-danger ms-auto d-flex gap-1 align-items-center justify-content-center">
+          <i class="fas fa-ban me-sm-1"></i>
+          <span class="d-sm-inline d-none">Cancel</span></button>
+      </div>
+    </div>
+    <div class="card-body">
+      <p class="text-uppercase text-sm">Selected: Project</p>
+      <div class="row">
+        <div class="col-md-6">
+          <div class="form-group">
+            <label for="example-text-input" class="form-control-label">Username</label>
+            <input class="form-control" type="text" value="lucky.jesse">
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-group">
+            <label for="example-text-input" class="form-control-label">Email address</label>
+            <input class="form-control" type="email" value="jesse@example.com">
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-group">
+            <label for="example-text-input" class="form-control-label">First name</label>
+            <input class="form-control" type="text" value="Jesse">
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-group">
+            <label for="example-text-input" class="form-control-label">Last name</label>
+            <input class="form-control" type="text" value="Lucky">
+          </div>
+        </div>
+      </div>
+      <hr class="horizontal dark">
+      <p class="text-uppercase text-sm">Contact Information</p>
+      <div class="row">
+        <div class="col-md-12">
+          <div class="form-group">
+            <label for="example-text-input" class="form-control-label">Address</label>
+            <input class="form-control" type="text" value="Bld Mihail Kogalniceanu, nr. 8 Bl 1, Sc 1, Ap 09">
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            <label for="example-text-input" class="form-control-label">City</label>
+            <input class="form-control" type="text" value="New York">
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            <label for="example-text-input" class="form-control-label">Country</label>
+            <input class="form-control" type="text" value="United States">
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            <label for="example-text-input" class="form-control-label">Postal code</label>
+            <input class="form-control" type="text" value="437300">
+          </div>
+        </div>
+      </div>
+      <hr class="horizontal dark">
+      <p class="text-uppercase text-sm">About me</p>
+      <div class="row">
+        <div class="col-md-12">
+          <div class="form-group">
+            <label for="example-text-input" class="form-control-label">About me</label>
+            <input class="form-control" type="text" value="A beautiful Dashboard for Bootstrap 5. It is Free and Open Source.">
+          </div>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-sm bg-gradient-success d-flex gap-1 align-items-center justify-content-center">
+        <i class="ni ni-check-bold me-sm-1"></i>
+        <span class="d-sm-inline d-none">Update</span></button>
+    </div>
+  </div>
+</div>
+
+{% endblock content %}
+
+<!-- Specific JS goes HERE --> 
+{% block javascripts %}{% endblock javascripts %}

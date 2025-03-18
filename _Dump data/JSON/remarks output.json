@@ -1,0 +1,110 @@
+[
+    {
+        "REMARKS":"Cancelled",
+        "ID":"1"
+    },
+    {
+        "REMARKS":"Completed",
+        "ID":"2"
+    },
+    {
+        "REMARKS":"Failure of bidding",
+        "ID":"3"
+    },
+    {
+        "REMARKS":"For Award",
+        "ID":"4"
+    },
+    {
+        "REMARKS":"For Bidding",
+        "ID":"5"
+    },
+    {
+        "REMARKS":"For preparation (POW and DED)",
+        "ID":"6"
+    },
+    {
+        "REMARKS":"For Re-alignment",
+        "ID":"7"
+    },
+    {
+        "REMARKS":"For Re-bid",
+        "ID":"8"
+    },
+    {
+        "REMARKS":"For reversion",
+        "ID":"9"
+    },
+    {
+        "REMARKS":"For Termination",
+        "ID":"10"
+    },
+    {
+        "REMARKS":"For Validation",
+        "ID":"11"
+    },
+    {
+        "REMARKS":"Issued Notice to Terminate",
+        "ID":"12"
+    },
+    {
+        "REMARKS":"No movement",
+        "ID":"13"
+    },
+    {
+        "REMARKS":"Not yet started",
+        "ID":"14"
+    },
+    {
+        "REMARKS":"Notice to Terminate",
+        "ID":"15"
+    },
+    {
+        "REMARKS":"On going",
+        "ID":"16"
+    },
+    {
+        "REMARKS":"On going",
+        "ID":"17"
+    },
+    {
+        "REMARKS":"Order of Termination",
+        "ID":"18"
+    },
+    {
+        "REMARKS":"PEEDO Validate",
+        "ID":"19"
+    },
+    {
+        "REMARKS":"Re-aligned",
+        "ID":"20"
+    },
+    {
+        "REMARKS":"Recently Awarded",
+        "ID":"21"
+    },
+    {
+        "REMARKS":"Reverted",
+        "ID":"22"
+    },
+    {
+        "REMARKS":"Slow movement",
+        "ID":"23"
+    },
+    {
+        "REMARKS":"Stop construction",
+        "ID":"24"
+    },
+    {
+        "REMARKS":"Subject for Reversion",
+        "ID":"25"
+    },
+    {
+        "REMARKS":"Suspended",
+        "ID":"26"
+    },
+    {
+        "REMARKS":"Terminated",
+        "ID":"27"
+    }
+]
