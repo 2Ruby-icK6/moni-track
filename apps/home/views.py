@@ -87,16 +87,40 @@ class ProjectTableView(ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        queryset = Project.objects.select_related(
-            "timeline",   # Fetch related ProjectTimeline
-            "contract"    # Fetch related Contract
-        ).all()
+        queryset = Project.objects.select_related("timeline", "contract", "contract__remarks").all()
+        
+        # Get filter parameters from request
+        category = self.request.GET.get('category', "")
+        fund = self.request.GET.get('fund', "")
+        municipality = self.request.GET.get('municipality', "")
+        office = self.request.GET.get('office', "")
+        sub_category = self.request.GET.get('sub_category', "")
+        start_year = self.request.GET.get("start_year", "")
+        end_year = self.request.GET.get("end_year", "")
+        remark = self.request.GET.get('remarks', "")
+
+        # Apply filters dynamically
+        if category:
+            queryset = queryset.filter(category__category=category)
+        if fund:
+            queryset = queryset.filter(fund_source__fund=fund)
+        if municipality:
+            queryset = queryset.filter(municipality__municipality=municipality)
+        if office:
+            queryset = queryset.filter(office__office=office)
+        if sub_category:
+            queryset = queryset.filter(sub_category__sub_category=sub_category)
+        if start_year and end_year:
+            queryset = queryset.filter(year__year__range=(start_year, end_year))
+        if remark:
+            queryset = queryset.filter(contract__remarks__remark=remark)
 
         return queryset
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        # Pass available filter options to the template
         context['category'] = Category.objects.values_list('category', flat=True).distinct().order_by('category')
         context['fund'] = FundSource.objects.values_list('fund', flat=True).distinct().order_by('fund')
         context['municipality'] = Municipality.objects.values_list('municipality', flat=True).distinct().order_by('municipality')
@@ -105,6 +129,17 @@ class ProjectTableView(ListView):
         context['year'] = Year.objects.values_list('year', flat=True).distinct().order_by('year')
         context['remark'] = Remark.objects.values_list('remark', flat=True).distinct().order_by('remark')
 
+        # Pass selected filters to the template for form repopulation
+        context['selected_filters'] = {
+            'category': self.request.GET.get('category', ''),
+            'fund': self.request.GET.get('fund', ''),
+            'municipality': self.request.GET.get('municipality', ''),
+            'office': self.request.GET.get('office', ''),
+            'sub_category': self.request.GET.get('sub_category', ''),
+            'year': self.request.GET.get('year', ''),
+            'remark': self.request.GET.get('remark', ''),
+        }
+        
         return context
     
 #------------- Projects Flex Table -------------#

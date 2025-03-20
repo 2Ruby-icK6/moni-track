@@ -19,10 +19,84 @@
                 <span class="d-sm-inline d-none">Flex Table</span>
               </a>
   
-              <a href="#" class="btn btn-sm bg-gradient-success d-flex gap-1 align-items-center justify-content-center">
-                <i class="ni ni-archive-2 me-sm-1"></i>
-                <span class="d-sm-inline d-none">Filter</span>
-              </a>
+              <!-- Filter Dropdown -->
+              <div class="dropdown">
+                <button class="btn btn-sm bg-gradient-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                  Filters
+                </button>
+                <div class="dropdown-menu p-3" id="filterDropdown" style="max-height: 300px; overflow-y: auto; width: 250px;">
+                  <form method="GET" id="filterForm">
+                    <input type="hidden" name="page" value="{{ request.GET.page }}">
+
+                    <div class="mb-2">
+                      <label for="categoryFilter">Category</label>
+                      <select class="form-control" name="category" id="categoryFilter">
+                        <option value="">All</option>
+                        {% for category in category %}
+                          <option value="{{ category }}" {% if request.GET.category == category %}selected{% endif %}>{{ category }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+
+                    <div class="mb-2">
+                      <label for="subcategoryFilter">Sub Category</label>
+                      <select class="form-control" name="subcategory" id="subcategoryFilter">
+                        <option value="">All</option>
+                        {% for sub_category in sub_category %}
+                          <option value="{{ sub_category }}" {% if request.GET.category == sub_category %}selected{% endif %}>{{ sub_category }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+
+                    <div class="mb-2">
+                      <label class="form-label" for="municipalityFilter">Municipality</label>
+                      <select class="form-control" name="municipality" id="municipalityFilter">
+                        <option value="">All</option>
+                        {% for municipality in municipality %}
+                          <option value="{{ municipality }}" {% if request.GET.municipality == municipality %}selected{% endif %}>{{ municipality }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+
+                    <!-- Year Range Filter -->
+                    <div class="mb-2 d-flex gap-2 align-items-center">
+                      <div class="w-50">
+                        <label for="startYearFilter">Start Year</label>
+                        <input type="number" class="form-control" name="start_year" id="startYearFilter" 
+                              value="{{ request.GET.start_year }}" placeholder="YYYY">
+                      </div>
+                      <div class="w-50">
+                        <label for="endYearFilter">End Year</label>
+                        <input type="number" class="form-control" name="end_year" id="endYearFilter" 
+                              value="{{ request.GET.end_year }}" placeholder="YYYY">
+                      </div>
+                    </div>
+
+                    <div class="mb-2">
+                      <label for="fundFilter">Funding Source</label>
+                      <select class="form-control" name="fund" id="fundFilter">
+                        <option value="">All</option>
+                        {% for fund in fund %}
+                          <option value="{{ fund }}" {% if request.GET.fund == fund %}selected{% endif %}>{{ fund }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+
+                    <div class="mb-2">
+                      <label for="remarksFilter">Remarks</label>
+                      <select class="form-control" name="remarks" id="remarksFilter">
+                        <option value="">All</option>
+                        {% for remark in remark %}
+                          <option value="{{ remark }}" {% if request.GET.remarks == remark %}selected{% endif %}>{{ remark }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100 mt-2">Apply Filters</button>
+                    <a href="{% url 'project_table' %}" class="btn btn-secondary w-100 mt-2">Reset</a>
+                  </form>
+                </div>
+              </div>
   
               <a href="/update-infra.html" class="btn btn-sm bg-gradient-success d-flex gap-1 align-items-center justify-content-center">
                 <i class="ni ni-settings me-sm-1"></i>
