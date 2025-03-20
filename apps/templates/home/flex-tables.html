@@ -60,10 +60,10 @@
 
                     <div class="mb-2">
                       <label for="subcategoryFilter">Sub Category</label>
-                      <select class="form-control" name="subcategory" id="subcategoryFilter">
+                      <select class="form-control" name="sub_category" id="subcategoryFilter">
                         <option value="">All</option>
                         {% for sub_category in sub_category %}
-                          <option value="{{ sub_category }}" {% if request.GET.category == sub_category %}selected{% endif %}>{{ sub_category }}</option>
+                          <option value="{{ sub_category }}" {% if request.GET.sub_category == sub_category %}selected{% endif %}>{{ sub_category }}</option>
                         {% endfor %}
                       </select>
                     </div>

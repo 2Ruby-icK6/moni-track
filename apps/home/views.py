@@ -90,11 +90,11 @@ class ProjectTableView(ListView):
         queryset = Project.objects.select_related("timeline", "contract", "contract__remarks").all()
         
         # Get filter parameters from request
-        category = self.request.GET.get('category', "")
-        fund = self.request.GET.get('fund', "")
-        municipality = self.request.GET.get('municipality', "")
-        office = self.request.GET.get('office', "")
-        sub_category = self.request.GET.get('sub_category', "")
+        category = self.request.GET.get('category')
+        fund = self.request.GET.get('fund')
+        municipality = self.request.GET.get('municipality')
+        office = self.request.GET.get('office')
+        sub_category = self.request.GET.get('sub_category')
         start_year = self.request.GET.get("start_year", "")
         end_year = self.request.GET.get("end_year", "")
         remark = self.request.GET.get('remarks', "")
@@ -125,7 +125,7 @@ class ProjectTableView(ListView):
         context['fund'] = FundSource.objects.values_list('fund', flat=True).distinct().order_by('fund')
         context['municipality'] = Municipality.objects.values_list('municipality', flat=True).distinct().order_by('municipality')
         context['office'] = Office.objects.values_list('office', flat=True).distinct().order_by('office')
-        context['sub_category'] = SubCategory.objects.values_list('sub_category', flat=True).distinct().order_by('sub_category')
+        context['sub_category'] = SubCategory.objects.values_list('sub_category', flat=True).distinct().order_by('sub_category')    
         context['year'] = Year.objects.values_list('year', flat=True).distinct().order_by('year')
         context['remark'] = Remark.objects.values_list('remark', flat=True).distinct().order_by('remark')
 
@@ -137,7 +137,7 @@ class ProjectTableView(ListView):
             'office': self.request.GET.get('office', ''),
             'sub_category': self.request.GET.get('sub_category', ''),
             'year': self.request.GET.get('year', ''),
-            'remark': self.request.GET.get('remark', ''),
+            'remark': self.request.GET.get('remarks', ''),
         }
         
         return context
