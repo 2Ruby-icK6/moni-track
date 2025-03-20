@@ -20,13 +20,13 @@
             <div class="col-md-2">
             <div class="form-group">
               <label for="example-text-input" class="form-control-label">Project Number</label>
-              <input class="form-control" value="Select Number">
+              {{ form.search_project_number }}
             </div>
           </div>
           <div class="col-md-10">
             <div class="form-group">
               <label for="example-text-input" class="form-control-label">Project Title</label>
-              <input class="form-control" value="Select Title">
+              {{ form.search_project_name }}
             </div>
           </div>
         </div>
@@ -42,86 +42,277 @@
   <div class="card">
     <div class="card-header pb-0">
       <div class="d-flex align-items-center">
-        <p class="mb-0">Update Project</p>
+        <p class="mb-0">Update Project 
+          <br> Selected:
+          {% if project %} <br> <span class="badge bg-success text-white">{{ project.project_number }}. {{ project.project_name }}</span> 
+          {% else %} <br> <span class="badge bg-danger text-white">Please select...</span>  {% endif %}</p>
+
         <button type="submit" class="btn btn-sm bg-gradient-danger ms-auto d-flex gap-1 align-items-center justify-content-center">
           <i class="fas fa-ban me-sm-1"></i>
           <span class="d-sm-inline d-none">Cancel</span></button>
       </div>
     </div>
     <div class="card-body">
-      <p class="text-uppercase text-sm">Selected: Project</p>
+      {% if project %}
+
+      <form method="POST" action="{% if project %}{% url 'update_data_with_pk' pk=project.pk %}{% endif %}">
+        {% csrf_token %}
+      <p class="text-uppercase text-sm">Project Details</p>
       <div class="row">
-        <div class="col-md-6">
+        <div class="col-md-2">
           <div class="form-group">
-            <label for="example-text-input" class="form-control-label">Username</label>
-            <input class="form-control" type="text" value="lucky.jesse">
+            <label for="example-text-input" class="form-control-label">Project ID</label>
+            {{ form.project_ID }}
           </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-10">
           <div class="form-group">
-            <label for="example-text-input" class="form-control-label">Email address</label>
-            <input class="form-control" type="email" value="jesse@example.com">
+            <label for="example-text-input" class="form-control-label">Project Name</label>
+            {{ form.project_name }}
           </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-8">
           <div class="form-group">
-            <label for="example-text-input" class="form-control-label">First name</label>
-            <input class="form-control" type="text" value="Jesse">
+            <label for="example-text-input" class="form-control-label">Category</label>
+            {{ form.category }}
           </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-4">
           <div class="form-group">
-            <label for="example-text-input" class="form-control-label">Last name</label>
-            <input class="form-control" type="text" value="Lucky">
+            <label for="example-text-input" class="form-control-label">Sub Category</label>
+            {{ form.sub_category }}
+          </div>
+        </div>
+        <div class="col-md-8">
+          <div class="form-group">
+            <label for="example-text-input" class="form-control-label">Location</label>
+            {{ form.location }}
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            <label for="example-text-input" class="form-control-label">Municipality</label>
+            {{ form.municipality }}
+          </div>
+        </div>
+        <div class="col-md-12">
+          <div class="form-group">
+            <label for="example-text-input" class="form-control-label">Project Description</label>
+            {{ form.project_description }}
+          </div>
+        </div>
+        <div class="col-md-8">
+          <div class="form-group">
+            <label for="example-text-input" class="form-control-label">Source of Fund</label>
+            {{ form.fund }}
+          </div>
+        </div>
+        <div class="col-md-2">
+          <div class="form-group">
+            <label for="example-text-input" class="form-control-label">Implementing Office</label>
+            {{ form.office }}
+          </div>
+        </div>
+        <div class="col-md-2">
+          <div class="form-group">
+            <label for="example-text-input" class="form-control-label">Year</label>
+            {{ form.year }}
           </div>
         </div>
       </div>
       <hr class="horizontal dark">
-      <p class="text-uppercase text-sm">Contact Information</p>
+      <p class="text-uppercase text-sm">Contract Information</p>
+      {{ contract_formset.management_form }}
+      {% for form in contract_formset %}
       <div class="row">
-        <div class="col-md-12">
+        <div class="col-md-3">
           <div class="form-group">
-            <label for="example-text-input" class="form-control-label">Address</label>
-            <input class="form-control" type="text" value="Bld Mihail Kogalniceanu, nr. 8 Bl 1, Sc 1, Ap 09">
+            <label for="example-text-input" class="form-control-label">Project Cost</label>
+            {{ form.project_cost }}
           </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
           <div class="form-group">
-            <label for="example-text-input" class="form-control-label">City</label>
-            <input class="form-control" type="text" value="New York">
+            <label for="example-text-input" class="form-control-label">Contract Cost</label>
+            {{ form.contract_cost }}
           </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
           <div class="form-group">
-            <label for="example-text-input" class="form-control-label">Country</label>
-            <input class="form-control" type="text" value="United States">
+            <label for="example-text-input" class="form-control-label">Mode of Procurement</label>
+            {{ form.procurement }}
           </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
           <div class="form-group">
-            <label for="example-text-input" class="form-control-label">Postal code</label>
-            <input class="form-control" type="text" value="437300">
+            <label for="example-text-input" class="form-control-label">Quarter</label>
+            {{ form.quarter }}
+          </div>
+        </div>
+        <div class="col-md-6  ">
+          <div class="form-group">
+            <label for="example-text-input" class="form-control-label">Project Contractor</label>
+            
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-group">
+            <label for="example-text-input" class="form-control-label">Tin Number</label>
+            
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-group">
+            <label for="example-text-input" class="form-control-label">General Remarks</label>
+            {{ form.remarks }}
           </div>
         </div>
       </div>
+      {% endfor %}
       <hr class="horizontal dark">
-      <p class="text-uppercase text-sm">About me</p>
+      <p class="text-uppercase text-sm">Project Timeline Information</p>
+      {{ timeline_formset.management_form }}
+      {% for form in timeline_formset %}
       <div class="row">
+        <div class="col-md-2">
+          <div class="form-group">
+            <label for="example-text-input" class="form-control-label">C D</label>
+            {{ form.cd }}
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-group">
+            <label for="example-text-input" class="form-control-label">NTP Date</label>
+            {{ form.ntp_date }}
+          </div>
+        </div>
+        <div class="col-md-2">
+          <div class="form-group">
+            <label for="example-text-input" class="form-control-label">Number of Extension</label>
+            {{ form.extension }}
+          </div>
+        </div>
+        <div class="col-md-5">
+          <div class="form-group">
+            <label for="example-text-input" class="form-control-label">Target Completion Date</label>
+            {{ form.target_completion_date }}
+          </div>
+        </div>
+        <div class="col-md-2">
+          <div class="form-group">
+            <label for="example-text-input" class="form-control-label">Total Cost Incurred to Date</label>
+            {{ form.total_cost_Incurred_to_date }}
+          </div>
+        </div>
+        <div class="col-md-5">
+          <div class="form-group">
+            <label for="example-text-input" class="form-control-label">Revised Completion Date</label>
+            {{ form.revised_completion_date }}
+          </div>
+        </div>
+        <div class="col-md-5">
+          <div class="form-group">
+            <label for="example-text-input" class="form-control-label">Date Completed</label>
+            {{ form.date_completed }}
+          </div>
+        </div>
         <div class="col-md-12">
           <div class="form-group">
-            <label for="example-text-input" class="form-control-label">About me</label>
-            <input class="form-control" type="text" value="A beautiful Dashboard for Bootstrap 5. It is Free and Open Source.">
+            <label for="example-text-input" class="form-control-label">Reason</label>
+            {{ form.reason }}
           </div>
         </div>
       </div>
+      {% endfor %}
       <button type="submit" class="btn btn-sm bg-gradient-success d-flex gap-1 align-items-center justify-content-center">
         <i class="ni ni-check-bold me-sm-1"></i>
         <span class="d-sm-inline d-none">Update</span></button>
     </div>
+    {% else %}
+      <p class="text-danger">No matching record found.</p> 
+      {% endif %}
   </div>
 </div>
 
 {% endblock content %}
 
 <!-- Specific JS goes HERE --> 
-{% block javascripts %}{% endblock javascripts %}
+{% block javascripts %}
+<!-- Load jQuery before Select2 -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<style>
+  /* Override Select2 styles to match Bootstrap form-controls */
+  .select2-container--bootstrap-5 .select2-selection {
+    height: calc(2.25rem + 2px); /* Match Bootstrap input height */
+    padding: 0.5rem 0.75rem; /* Proper padding */
+    font-size: 0.875rem; /* Match Bootstrap font size */
+    line-height: 1.4rem;
+    color: #495057;
+    border: 1px solid #d2d6da;
+    border-radius: 0.5rem;
+    box-shadow: none; /* Remove default focus shadow */
+  }
+
+  .select2-dropdown {
+    max-height: 300px !important; 
+    overflow-y: auto !important;  
+  }
+
+  /* Placeholder styling */
+  .select2-container--default .select2-selection__placeholder {
+    color: #6c757d; /* Bootstrap placeholder color */
+  }
+
+  /* Text color inside the Select2 input */
+  .select2-container--default .select2-selection--single .select2-selection__rendered {
+    color: #495057; /* Text color */
+    padding-left: 8px; /* Adjust padding */
+  }
+
+  /* Dropdown arrow color */
+  .select2-container--default .select2-selection--single .select2-selection__arrow b {
+    border-color: #6c757d transparent transparent transparent;
+  }
+
+  /* Dropdown menu styling */
+  .select2-container--bootstrap-5 .select2-dropdown {
+    border-radius: 0.375rem;
+    box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.05);
+  }
+
+  /* Highlight selection on hover */
+  .select2-results__option--highlighted {
+    background-color: #38a3a5 !important; /* Custom hover color */
+    color: white !important;
+  }
+
+  /* Selected item styling */
+  .select2-container--default .select2-results__option[aria-selected="true"] {
+    background-color: #74c69d !important; /* Match green theme */
+    color: white !important;
+  }
+
+  /* Focus state */
+  .select2-container--bootstrap-5.select2-container--focus .select2-selection {
+    border-color: #74c69d;
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(116, 198, 157, 0.25);
+  }
+</style>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    $('#id_search_no, #id_search_project_name, .select2').select2({
+      allowClear: false,
+      placeholder: function() {
+        return $(this).data('placeholder'); 
+      },
+      theme: 'bootstrap-5',
+      width: '100%',
+    });
+  });
+</script>
+{% endblock javascripts %}

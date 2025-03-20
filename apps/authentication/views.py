@@ -4,10 +4,13 @@ Copyright (c) 2019 - present AppSeed.us
 """
 
 # Create your views here.
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
-from .forms import LoginForm, SignUpForm
+from django.views import View
 
+#------------- Forms -------------#
+# Auth Form
+from .forms import LoginForm, SignUpForm
 
 def login_view(request):
     form = LoginForm(request.POST or None)
@@ -54,3 +57,5 @@ def register_user(request):
         form = SignUpForm()
 
     return render(request, "accounts/register.html", {"form": form, "msg": msg, "success": success, "page_type": "register"})
+
+

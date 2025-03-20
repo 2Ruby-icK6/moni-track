@@ -9,8 +9,9 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
 from django.urls import reverse
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Q, F
+from django.forms import inlineformset_factory
 
 from django.views import View
 from django.views.generic.list import ListView
@@ -20,6 +21,12 @@ from django.views.generic.list import ListView
 from .models import Project, Contract, ProjectTimeline
 # Foreign table
 from .models import Category, SubCategory, Municipality, Year, Office, Contractor, FundSource, Remark
+# History Table
+from .models import UpdateHistory
+
+#------------- Forms -------------#
+# Auth Form
+from apps.authentication.forms import UpdateForm, ProjectTimelineForm, ContractForm
 
 #------------- Login -------------#
 @login_required(login_url="/login/")
@@ -125,7 +132,7 @@ class ProjectTableView(ListView):
         context['fund'] = FundSource.objects.values_list('fund', flat=True).distinct().order_by('fund')
         context['municipality'] = Municipality.objects.values_list('municipality', flat=True).distinct().order_by('municipality')
         context['office'] = Office.objects.values_list('office', flat=True).distinct().order_by('office')
-        context['sub_category'] = SubCategory.objects.values_list('sub_category', flat=True).distinct().order_by('sub_category')    
+        context['sub_category'] = SubCategory.objects.values_list('sub_category', flat=True).distinct().order_by('sub_category')
         context['year'] = Year.objects.values_list('year', flat=True).distinct().order_by('year')
         context['remark'] = Remark.objects.values_list('remark', flat=True).distinct().order_by('remark')
 
@@ -278,3 +285,82 @@ class DonwloadTablePreview(ListView):
         context['remark'] = Remark.objects.values_list('remark', flat=True).distinct().order_by('remark')
 
         return context
+
+#------------- Udpate Project -------------#
+# Create inline formsets for ProjectTimeline and Contract
+ProjectTimelineFormSet = inlineformset_factory(Project, ProjectTimeline, form=ProjectTimelineForm, extra=1, can_delete=True)
+ContractFormSet = inlineformset_factory(Project, Contract, form=ContractForm, extra=1, can_delete=True)
+
+class UpdateDataView(View):
+    template_name = 'crud/update-infra.html'
+
+    def get(self, request):
+        query_project_number = request.GET.get('search_project_number', '').strip()
+        query_project_name = request.GET.get('search_project_name', '').strip()
+        
+        projects = Project.objects.all()
+        project = None
+        form = UpdateForm()
+        timeline_formset = ProjectTimelineFormSet()
+        contract_formset = ContractFormSet()
+
+        if query_project_number or query_project_name:
+            if query_project_number:
+                projects = projects.filter(project_number=query_project_number)
+            if query_project_name:
+                projects = projects.filter(project_name__icontains=query_project_name)
+
+            if projects.count() == 1:
+                project = projects.first()
+                form = UpdateForm(instance=project)
+                timeline_formset = ProjectTimelineFormSet(instance=project)
+                contract_formset = ContractFormSet(instance=project)
+
+        return render(request, self.template_name, {
+            'projects': projects,
+            'form': form,
+            'project': project,
+            'timeline_formset': timeline_formset,
+            'contract_formset': contract_formset
+        })
+
+    def post(self, request, pk):
+        project = get_object_or_404(Project, pk=pk)
+
+        # Fetch the original values before updating
+        original_project = Project.objects.get(pk=pk)
+        
+        form = UpdateForm(request.POST, instance=project)
+        timeline_formset = ProjectTimelineFormSet(request.POST, instance=project)
+        contract_formset = ContractFormSet(request.POST, instance=project)
+
+        if form.is_valid() and timeline_formset.is_valid() and contract_formset.is_valid():
+            # Track changes in the Project model
+            for field in form.changed_data:
+                old_value = getattr(original_project, field) or ""  # Handle None values
+                new_value = form.cleaned_data[field] or ""
+
+                print(f"Updating '{field}': '{old_value}' -> '{new_value}'")  # Debugging changed fields
+
+                UpdateHistory.objects.create(
+                    project=project,
+                    field_name=field,
+                    old_value=old_value,
+                    new_value=new_value,
+                    updated_by=request.user
+                )
+
+            # Save main Project form and related formsets
+            form.save()
+            timeline_formset.save()
+            contract_formset.save()
+
+            return redirect('update_data')
+
+        return render(request, self.template_name, {
+            'form': form,
+            'project': project,
+            'timeline_formset': timeline_formset,
+            'contract_formset': contract_formset
+        })
+    

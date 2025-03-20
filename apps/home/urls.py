@@ -8,7 +8,7 @@ from apps.home import views
 
 #------------- Views -------------#
 from apps.home.views import ProjectListView, ProjectTableView, ProjectFlexTableView
-from apps.home.views import DonwloadTablePreview
+from apps.home.views import DonwloadTablePreview, UpdateDataView
 
 urlpatterns = [
 
@@ -20,6 +20,9 @@ urlpatterns = [
     path('project-flextable/', ProjectFlexTableView.as_view(), name='project_flextable'),
 
     path('download/', DonwloadTablePreview.as_view(), name='download_file'),
+
+    path('update/', UpdateDataView.as_view(), name='update_data'),  
+    path('update/<int:pk>/', UpdateDataView.as_view(), name='update_data_with_pk'),
 
     # Matches any html file
     re_path(r'^.*\.*', views.pages, name='pages'),
