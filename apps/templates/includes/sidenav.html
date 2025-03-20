@@ -26,7 +26,7 @@
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link " href="/tables.html">
+        <a class="nav-link " href="{% url 'project_table' %}">
           <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
             <i class="ni ni-calendar-grid-58 text-dark text-sm opacity-10"></i>
           </div>
@@ -81,6 +81,6 @@
       </div>
     </div>
     <a href="#" target="_blank" class="btn btn-dark btn-sm w-100 mb-3">Upload File</a>
-    <a href="#" type="button" class="btn btn-primary btn-sm mb-0 w-100" >Download File</a>
+    <a href="{% url 'download_file' %}" type="button" class="btn btn-primary btn-sm mb-0 w-100" >Download File</a>
   </div>
 </nav>

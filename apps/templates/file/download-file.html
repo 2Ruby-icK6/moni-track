@@ -1,8 +1,43 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %} Tables {% endblock title %}
+{% block title %} Dowload {% endblock title %}
 
 {% block content %}
+
+<div class="container-fluid py-3">
+    <div class="card">
+      <div class="card-header pb-0">
+        <div class="d-flex justify-content-between">
+          <p class="mb-0">Select Project</p>
+          <a href="mon/update-history.html" class="btn bg-gradient-info btn-sm ms-auto d-flex gap-1 align-items-center justify-content-center">
+            <i class="ni ni-book-bookmark me-sm-1"></i>
+            <span class="d-sm-inline d-none">Update History</span>
+          </a>
+        </div>
+      </div>
+      <div class="card-body pt-0">
+        <form action="">
+          <div class="row gx-4">
+              <div class="col-md-2">
+              <div class="form-group">
+                <label for="example-text-input" class="form-control-label">Project Number</label>
+                <input class="form-control" value="Select Number">
+              </div>
+            </div>
+            <div class="col-md-10">
+              <div class="form-group">
+                <label for="example-text-input" class="form-control-label">Project Title</label>
+                <input class="form-control" value="Select Title">
+              </div>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-sm bg-gradient-warning d-flex gap-1 align-items-center justify-content-center">
+            <i class="fas fa-search me-sm-1"></i>
+            <span class="d-sm-inline d-none">Find</span></button>
+        </form>
+      </div>
+    </div>
+</div>
 
 <div class="container-fluid py-4">
   <div class="row">
@@ -14,9 +49,9 @@
 
             <div class="d-flex gap-3">
 
-              <a href="{% url 'project_flextable' %}" class="btn btn-sm bg-gradient-success d-flex gap-1 align-items-center justify-content-center">
-                <i class="ni ni-settings-gear-65 me-sm-1"></i>
-                <span class="d-sm-inline d-none">Flex Table</span>
+              <a href="#" class="btn btn-sm bg-gradient-success d-flex gap-1 align-items-center justify-content-center">
+                <i class="ni ni-collection me-sm-1"></i>
+                <span class="d-sm-inline d-none">Select Column</span>
               </a>
   
               <a href="#" class="btn btn-sm bg-gradient-success d-flex gap-1 align-items-center justify-content-center">
@@ -75,109 +110,6 @@
                   </td>
                   <td class="text-center align-middle">
                     <p class="text-xs font-weight-bold mb-0">{{ project.year.year }}</p>
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="row">
-    <div class="col-12">
-      <div class="card mb-4">
-        <div class="card-header pb-0">
-          <h6>Contract Table</h6>
-        </div>
-        <div class="card-body px-0 pt-0 pb-2">
-          <div class="table-responsive p-0">
-            <table class="table align-items-center table-bordered table-hover mb-0">
-              <thead>
-                <tr>
-                  <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">NO</th>
-                  <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Project Cost</th>
-                  <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Contract Cost</th>
-                  <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Mode of Procurement</th>
-                  <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Quarterly Report</th>
-                  <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Project Contractor</th>
-                  <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">General Remarks</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for project in projects %}
-                <tr>
-                  <td class="text-center align-middle">
-                    <h6 class="text-sm">{{ project.project_number }}</h6>
-                  </td>
-                  <td class="text-center align-middle">
-                    <p class="text-wrap text-xs font-weight-bold mb-0">{{ project.contract.project_cost }}</p>
-                  </td>
-                  <td class="text-center align-middle">
-                    <p class="text-wrap text-xs font-weight-bold mb-0">{{ project.contract.contract_cost }}</p>
-                  </td>
-                  <td class="text-center align-middle">
-                    <p class="text-wrap text-xs font-weight-bold mb-0">{{ project.contract.procurement }}</p>
-                  </td>
-                  <td class="text-center align-middle">
-                    <p class="text-secondary text-xs font-weight-bold mb-0">{{ project.contract.quarter }}</p>
-                  </td>
-                  <td>
-                    <p class="text-wrap text-xs font-weight-bold mb-0"">{{ project.contract.contractor }}</p>
-                    <p class="text-xs text-secondary mb-0">{{ project.contract.contractor.tin_number }}</p>
-                  </td>
-                  <td class="text-center align-middle">
-                    <p class="text-xs font-weight-bold mb-0">{{ project.contract.remarks }}</p>
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="row">
-    <div class="col-12">
-      <div class="card mb-4">
-        <div class="card-header pb-0">
-          <h6>Project Timeline Table</h6>
-        </div>
-        <div class="card-body px-0 pt-0 pb-2">
-          <div class="table-responsive p-0">
-            <table class="table align-items-center table-bordered table-hover mb-0">
-              <thead>
-                <tr>
-                  <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">NO</th>
-                  <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">C D</th>
-                  <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">NTP Date</th>
-                  <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Target Completion Date</th>
-                  <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Revised Completion Date</th>
-                  <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Date Completed</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for project in projects %}
-                <tr>
-                  <td class="text-center align-middle">
-                    <h6 class="text-sm">{{ project.project_number }}</h6>
-                  </td>
-                  <td class="text-center align-middle">
-                    <p class="text-wrap text-xs font-weight-bold mb-0">{{ project.timeline.cd }}</p>
-                  </td>
-                  <td class="text-center align-middle">
-                    <p class="text-wrap text-xs font-weight-bold mb-0">{{ project.timeline.ntp_date }}</p>
-                  </td>
-                  <td class="text-center align-middle">
-                    <p class="text-wrap text-xs font-weight-bold mb-0">{{ project.timeline.target_completion_date }}</p>
-                  </td>
-                  <td class="text-center align-middle">
-                    <p class="text-secondary text-xs font-weight-bold mb-0">{{ project.timeline.revised_completion_date }}</p>
-                  </td>
-                  <td class="text-center align-middle">
-                    <p class="text-secondary text-xs font-weight-bold mb-0">{{ project.timeline.date_completed }}</p>
                   </td>
                 </tr>
                 {% endfor %}
@@ -262,8 +194,6 @@
     </div>
   </div>
 </div>
-
-  </div>
 
 {% endblock content %}
 
