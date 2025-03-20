@@ -111,4 +111,7 @@ class ProjectTimeline(models.Model):
     extension = models.IntegerField(null=True, blank=True)
     target_completion_date = models.DateField(null=True, blank=True)
     revised_completion_date = models.CharField(max_length=50, null=True, blank=True)
+    total_cost_Incurred_to_date = models.CharField(max_length=50, null=True, blank=True)
     date_completed = models.DateField(null=True, blank=True)
+    reason = models.TextField(null=True, blank=True)
+
