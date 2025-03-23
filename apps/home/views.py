@@ -12,6 +12,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Q, F
 from django.forms import inlineformset_factory
+from django.contrib import messages
 
 from django.views import View
 from django.views.generic.list import ListView
@@ -20,13 +21,13 @@ from django.views.generic.list import ListView
 # Main table
 from .models import Project, Contract, ProjectTimeline
 # Foreign table
-from .models import Category, SubCategory, Municipality, Year, Office, Contractor, FundSource, Remark
+from .models import Category, SubCategory, Municipality, Year, Office, FundSource, Remark
 # History Table
 from .models import UpdateHistory
 
 #------------- Forms -------------#
 # Auth Form
-from apps.authentication.forms import UpdateForm, ProjectTimelineForm, ContractForm
+from apps.authentication.forms import UpdateForm, ProjectForm, ProjectTimelineForm, ContractForm
 
 #------------- Login -------------#
 @login_required(login_url="/login/")
@@ -165,7 +166,7 @@ class ProjectFlexTableView(ListView):
             target=F("timeline__target_completion_date"),
             revised=F("timeline__revised_completion_date"),
             date_completed=F("timeline__date_completed"),
-            total_cost=F("timeline__total_cost_Incurred_to_date"),
+            total_cost=F("timeline__total_cost_incurred_to_date"),
             reason=F("timeline__reason"),
 
             # Contract 
@@ -174,8 +175,8 @@ class ProjectFlexTableView(ListView):
             procurement=F("contract__procurement"),
             quarter=F("contract__quarter"),
             remarks=F("contract__remarks__remark"),
-            contractor=F("contract__contractor__contractor"),
-            tin_number=F("contract__contractor__tin_number"),
+            contractor=F("contract__project_contractor"),
+            tin_number=F("contract__tin_number"),
         ).order_by("project_number")
 
         # Get filter parameters from request
@@ -288,8 +289,8 @@ class DonwloadTablePreview(ListView):
 
 #------------- Udpate Project -------------#
 # Create inline formsets for ProjectTimeline and Contract
-ProjectTimelineFormSet = inlineformset_factory(Project, ProjectTimeline, form=ProjectTimelineForm, extra=1, can_delete=True)
-ContractFormSet = inlineformset_factory(Project, Contract, form=ContractForm, extra=1, can_delete=True)
+ProjectTimelineFormSet = inlineformset_factory(Project, ProjectTimeline, form=ProjectTimelineForm, extra=0, can_delete=True)
+ContractFormSet = inlineformset_factory(Project, Contract, form=ContractForm, extra=0, can_delete=True)
 
 class UpdateDataView(View):
     template_name = 'crud/update-infra.html'
@@ -326,22 +327,31 @@ class UpdateDataView(View):
 
     def post(self, request, pk):
         project = get_object_or_404(Project, pk=pk)
-
-        # Fetch the original values before updating
+        
+        # Fetch the original values before update
         original_project = Project.objects.get(pk=pk)
+        original_timeline = project.timeline if hasattr(project, 'timeline') else None
+        original_contract = project.contract if hasattr(project, 'contract') else None
+
         
         form = UpdateForm(request.POST, instance=project)
         timeline_formset = ProjectTimelineFormSet(request.POST, instance=project)
         contract_formset = ContractFormSet(request.POST, instance=project)
 
         if form.is_valid() and timeline_formset.is_valid() and contract_formset.is_valid():
-            # Track changes in the Project model
+            updated_project = form.save()
+
+            # Track changes for project fields
             for field in form.changed_data:
-                old_value = getattr(original_project, field) or ""  # Handle None values
-                new_value = form.cleaned_data[field] or ""
-
-                print(f"Updating '{field}': '{old_value}' -> '{new_value}'")  # Debugging changed fields
-
+                old_value = getattr(original_project, field, "")
+                new_value = form.cleaned_data[field]
+                
+                if old_value is None:
+                    old_value = None
+                if new_value is None:
+                    new_value = None
+                
+                print(f"Updating '{field}': '{old_value}' -> '{new_value}'")
                 UpdateHistory.objects.create(
                     project=project,
                     field_name=field,
@@ -350,10 +360,58 @@ class UpdateDataView(View):
                     updated_by=request.user
                 )
 
-            # Save main Project form and related formsets
-            form.save()
-            timeline_formset.save()
-            contract_formset.save()
+            # Ensure formsets are properly saved
+            timelines = timeline_formset.save(commit=False)
+            for timeline in timelines:
+                timeline.project = updated_project  # Explicitly set project FK
+                timeline.save()
+            
+            contracts = contract_formset.save(commit=False)
+            for contract in contracts:
+                contract.project = updated_project  # Explicitly set project FK
+                contract.save()
+            
+            # Fetch the latest saved instances
+            updated_timeline = ProjectTimeline.objects.filter(project=project).first()
+            updated_contract = Contract.objects.filter(project=project).first()
+
+            # Track changes for timeline
+            if original_timeline and updated_timeline:
+                for field in ProjectTimeline._meta.fields:
+                    field_name = field.name
+                    old_value = getattr(original_timeline, field_name, None)
+                    new_value = getattr(updated_timeline, field_name, None)
+
+                    # Only log changes if values are different
+                    if old_value != new_value:
+                        UpdateHistory.objects.create(
+                            project=project,
+                            field_name=f"Timeline: {field_name}",
+                            old_value=old_value if old_value is not None else "None",
+                            new_value=new_value if new_value is not None else "None",
+                            updated_by=request.user
+                        )
+
+            # Track changes for contract
+            if original_contract and updated_contract:
+                for field in Contract._meta.fields:
+                    field_name = field.name
+                    old_value = getattr(original_contract, field_name, None)
+                    new_value = getattr(updated_contract, field_name, None)
+
+                    # Only log changes if values are different
+                    if old_value != new_value:
+                        UpdateHistory.objects.create(
+                            project=project,
+                            field_name=f"Contract: {field_name}",
+                            old_value=old_value if old_value is not None else "None",
+                            new_value=new_value if new_value is not None else "None",
+                            updated_by=request.user
+                        )
+
+            # Also delete any removed instances
+            timeline_formset.save_m2m()
+            contract_formset.save_m2m()
 
             return redirect('update_data')
 
@@ -363,4 +421,70 @@ class UpdateDataView(View):
             'timeline_formset': timeline_formset,
             'contract_formset': contract_formset
         })
-    
+
+#------------- Udpate History Project -------------#
+class UpdateHistoryView(ListView):
+    """
+    Displays update history for the logged-in user and provides actions
+    to revert (undo) or accept changes.
+    """
+    model = UpdateHistory
+    template_name = "crud/history/update-history.html"
+    context_object_name = "history_entries"
+    ordering = ["-updated_at"]
+
+    def get_queryset(self):
+        return UpdateHistory.objects.filter(updated_by=self.request.user)
+
+class UpdateHistoryActionView(View):
+    """
+    Handles user actions: revert (undo) or accept changes.
+    """
+
+    def post(self, request, history_id, action):
+        history_entry = get_object_or_404(UpdateHistory, id=history_id, updated_by=request.user)
+        project = history_entry.project
+
+        field_name = history_entry.field_name
+        old_value = history_entry.old_value
+
+        # Ensure that if old_value is a string "None", we set it to actual None (null)
+        if old_value == "None":
+            old_value = None
+
+        if action == "revert":
+            # Handling fields in the Project model
+            if hasattr(project, field_name):
+                setattr(project, field_name, old_value)
+                project.save()
+
+            # Handling fields in the Contract model
+            elif field_name.startswith("Contract: "):
+                contract_field = field_name.replace("Contract: ", "")
+                contract = getattr(project, "contract", None)
+                if contract and hasattr(contract, contract_field):
+                    setattr(contract, contract_field, old_value)
+                    contract.save()
+
+            # Handling fields in the ProjectTimeline model
+            elif field_name.startswith("Timeline: "):
+                timeline_field = field_name.replace("Timeline: ", "")
+                timeline = getattr(project, "timeline", None)
+                if timeline and hasattr(timeline, timeline_field):
+                    setattr(timeline, timeline_field, old_value)
+                    timeline.save()
+
+            else:
+                messages.error(request, "Invalid field name, unable to revert.")
+                return redirect("update-history")
+
+            # Remove the history entry after reverting
+            history_entry.delete()
+            messages.success(request, f"Reverted {field_name} to '{old_value}'.")
+        
+        elif action == "accept":
+            history_entry.delete()
+            messages.success(request, f"Accepted change for {field_name}.")
+
+        return redirect("update-history")
+

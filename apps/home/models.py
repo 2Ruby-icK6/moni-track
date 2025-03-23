@@ -34,7 +34,7 @@ class SubCategory(models.Model):
 
 class Year(models.Model):
     id = models.AutoField(primary_key=True, null=False)
-    year = models.IntegerField(null=False)
+    year = models.IntegerField(unique=True, null=False)
 
     def __str__(self):
         return str(self.year)
@@ -54,14 +54,6 @@ class Remark(models.Model):
     
     def __str__(self):
         return self.remark
-    
-class Contractor(models.Model):
-    id = models.AutoField(primary_key=True)
-    contractor = models.TextField(null=True, blank=True)
-    tin_number = models.TextField(null=True, blank=True)
-
-    def __str__(self):
-        return self.contractor
 
 class FundSource(models.Model):
     id = models.AutoField(primary_key=True)
@@ -83,14 +75,14 @@ class Project(BaseModel):
     project_number = models.AutoField(primary_key=True)
     project_name = models.TextField(null=False)
     project_ID = models.TextField(null=True, blank=True)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True, related_name="infra_views")
-    sub_category = models.ForeignKey(SubCategory, on_delete=models.CASCADE, null=True, blank=True, related_name="infra_views")
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True, related_name="projects")
+    sub_category = models.ForeignKey(SubCategory, on_delete=models.CASCADE, null=True, blank=True, related_name="projects")
     project_description = models.TextField(null=True, blank=True)
     location = models.TextField(null=True, blank=True)
-    municipality = models.ForeignKey(Municipality, on_delete=models.CASCADE, null=True, blank=True, related_name="infra_views")
+    municipality = models.ForeignKey(Municipality, on_delete=models.CASCADE, null=True, blank=True, related_name="projects")
     office = models.ForeignKey(Office, on_delete=models.SET_NULL, null=True, blank=True)
-    year = models.ForeignKey(Year, on_delete=models.CASCADE, related_name="infra_views")
-    fund = models.ForeignKey(FundSource, on_delete=models.SET_NULL, null=True, blank=True, related_name="infra_views")
+    year = models.ForeignKey(Year, on_delete=models.CASCADE, related_name="projects")
+    fund = models.ForeignKey(FundSource, on_delete=models.SET_NULL, null=True, blank=True, related_name="projects")
 
     class Meta:
         ordering = ['project_number']
@@ -101,7 +93,8 @@ class Contract(models.Model):
     project_cost = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
     contract_cost = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
     procurement = models.TextField(null=True, blank=True)
-    contractor = models.ForeignKey(Contractor, on_delete=models.SET_NULL, null=True, blank=True, related_name="contract")
+    project_contractor = models.TextField(null=True, blank=True)
+    tin_number = models.TextField(null=True, blank=True)
     quarter = models.DecimalField(max_digits=5, decimal_places=4, null=True, blank=True)
     remarks = models.ForeignKey(Remark, on_delete=models.CASCADE, related_name="contract")
 
@@ -112,7 +105,7 @@ class ProjectTimeline(models.Model):
     extension = models.IntegerField(null=True, blank=True)
     target_completion_date = models.DateField(null=True, blank=True)
     revised_completion_date = models.CharField(max_length=50, null=True, blank=True)
-    total_cost_Incurred_to_date = models.CharField(max_length=50, null=True, blank=True)
+    total_cost_incurred_to_date = models.CharField(max_length=50, null=True, blank=True)
     date_completed = models.DateField(null=True, blank=True)
     reason = models.TextField(null=True, blank=True)
 
@@ -123,7 +116,7 @@ class UpdateHistory(models.Model): # Update History
     old_value = models.TextField(null=True, blank=True)
     new_value = models.TextField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now_add=True)
-    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    updated_by = models.ForeignKey(User, on_delete=models.CASCADE)  # Ensure this is a ForeignKey
 
     def __str__(self):
-        return f"{self.project.project_name} - {self.field_name} changed"
+        return {self.project.project_name} - {self.field_name}

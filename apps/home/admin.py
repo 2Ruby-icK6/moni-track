@@ -7,7 +7,7 @@ from django.contrib import admin
 
 # Register your models here.
 from .models import (
-    Category, Year, Municipality, Remark, Contractor, FundSource, Office,
+    Category, Year, Municipality, Remark, FundSource, Office,
     Project, Contract, ProjectTimeline
 )
 
@@ -33,11 +33,6 @@ class RemarkAdmin(admin.ModelAdmin):
     list_display = ('id', 'remark')
     search_fields = ('remark',)
 
-@admin.register(Contractor)
-class ContractorAdmin(admin.ModelAdmin):
-    list_display = ('id', 'contractor', 'tin_number')
-    search_fields = ('contractor', 'tin_number')
-
 @admin.register(FundSource)
 class FundSourceAdmin(admin.ModelAdmin):
     list_display = ('id', 'fund')
@@ -58,9 +53,9 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(Contract)
 class ContractAdmin(admin.ModelAdmin):
-    list_display = ('project', 'project_cost', 'contract_cost', 'contractor', 'remarks')
-    search_fields = ('project__project_name', 'contractor__contractor')
-    list_filter = ('contractor', 'remarks')
+    list_display = ('project', 'project_cost', 'contract_cost', 'project_contractor', 'tin_number', 'remarks')
+    search_fields = ('project__project_name', 'project_contractor')
+    list_filter = ('project_contractor', 'tin_number','remarks')
 
 @admin.register(ProjectTimeline)
 class ProjectTimelineAdmin(admin.ModelAdmin):

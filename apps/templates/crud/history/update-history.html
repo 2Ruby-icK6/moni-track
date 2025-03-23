@@ -9,194 +9,64 @@
     <div class="card-header pb-0">
       <div class="d-flex align-items-center">
         <p class="mb-0">Recents Updates</p>
-        <button type="submit" class="btn btn-sm bg-gradient-danger ms-auto d-flex gap-1 align-items-center justify-content-center">
+        <a href="{% url 'update_data' %}" class="btn btn-sm bg-gradient-danger ms-auto d-flex gap-1 align-items-center justify-content-center">
           <i class="ni ni-curved-next me-sm-1"></i>
-          <span class="d-sm-inline d-none">Back to Update</span></button>
+          <span class="d-sm-inline d-none">Back to Update</span></a>
       </div>
     </div>
     <div class="card-body">
       <div class="table-responsive p-0">
+        {% if history_entries %}
         <table class="table align-items-center mb-0">
           <thead>
             <tr>
-              <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Author</th>
-              <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Function</th>
-              <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Status</th>
-              <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Employed</th>
-              <th class="text-secondary opacity-7"></th>
+              <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Project</th>
+              <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Field</th>
+              <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Old Value</th>
+              <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">New Value</th>
+              <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Time Updated</th>
+              <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Updated By</th>
+              <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Actions</th>
             </tr>
           </thead>
+          {% for entry in history_entries %}
           <tbody>
             <tr>
               <td>
-                <div class="d-flex px-2 py-1">
-                  <div>
-                    <img src="/static/assets/img/team-2.jpg" class="avatar avatar-sm me-3" alt="user1">
-                  </div>
-                  <div class="d-flex flex-column justify-content-center">
-                    <h6 class="mb-0 text-sm">John Michael</h6>
-                    <p class="text-xs text-secondary mb-0">john@creative-tim.com</p>
-                  </div>
-                </div>
+                <p class="text-xs font-weight-bold mb-0">{{ entry.project.project_name }}</p>
               </td>
               <td>
-                <p class="text-xs font-weight-bold mb-0">Manager</p>
-                <p class="text-xs text-secondary mb-0">Organization</p>
+                <span class="text-secondary text-xs font-weight-bold">{{ entry.field_name }}</span>
               </td>
               <td class="align-middle text-center text-sm">
-                <span class="badge badge-sm bg-gradient-success">Online</span>
+                <span class="text-secondary text-xs font-weight-bold">{{ entry.old_value }}</span>
               </td>
               <td class="align-middle text-center">
-                <span class="text-secondary text-xs font-weight-bold">23/04/18</span>
-              </td>
-              <td class="align-middle">
-                <a href="javascript:;" class="text-secondary font-weight-bold text-xs" data-toggle="tooltip" data-original-title="Edit user">
-                  Undo / Accept
-                </a>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div class="d-flex px-2 py-1">
-                  <div>
-                    <img src="/static/assets/img/team-3.jpg" class="avatar avatar-sm me-3" alt="user2">
-                  </div>
-                  <div class="d-flex flex-column justify-content-center">
-                    <h6 class="mb-0 text-sm">Alexa Liras</h6>
-                    <p class="text-xs text-secondary mb-0">alexa@creative-tim.com</p>
-                  </div>
-                </div>
-              </td>
-              <td>
-                <p class="text-xs font-weight-bold mb-0">Programator</p>
-                <p class="text-xs text-secondary mb-0">Developer</p>
-              </td>
-              <td class="align-middle text-center text-sm">
-                <span class="badge badge-sm bg-gradient-secondary">Offline</span>
+                <span class="text-secondary text-xs font-weight-bold">{{ entry.new_value }}</span>
               </td>
               <td class="align-middle text-center">
-                <span class="text-secondary text-xs font-weight-bold">11/01/19</span>
-              </td>
-              <td class="align-middle">
-                <a href="javascript:;" class="text-secondary font-weight-bold text-xs" data-toggle="tooltip" data-original-title="Edit user">
-                  Edit
-                </a>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div class="d-flex px-2 py-1">
-                  <div>
-                    <img src="/static/assets/img/team-4.jpg" class="avatar avatar-sm me-3" alt="user3">
-                  </div>
-                  <div class="d-flex flex-column justify-content-center">
-                    <h6 class="mb-0 text-sm">Laurent Perrier</h6>
-                    <p class="text-xs text-secondary mb-0">laurent@creative-tim.com</p>
-                  </div>
-                </div>
-              </td>
-              <td>
-                <p class="text-xs font-weight-bold mb-0">Executive</p>
-                <p class="text-xs text-secondary mb-0">Projects</p>
-              </td>
-              <td class="align-middle text-center text-sm">
-                <span class="badge badge-sm bg-gradient-success">Online</span>
+                <span class="text-secondary text-xs font-weight-bold">{{ entry.updated_at }}</span>
               </td>
               <td class="align-middle text-center">
-                <span class="text-secondary text-xs font-weight-bold">19/09/17</span>
+                <span class="text-secondary text-xs font-weight-bold">{{ entry.updated_by }}</span>
               </td>
               <td class="align-middle">
-                <a href="javascript:;" class="text-secondary font-weight-bold text-xs" data-toggle="tooltip" data-original-title="Edit user">
-                  Edit
-                </a>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div class="d-flex px-2 py-1">
-                  <div>
-                    <img src="/static/assets/img/team-3.jpg" class="avatar avatar-sm me-3" alt="user4">
-                  </div>
-                  <div class="d-flex flex-column justify-content-center">
-                    <h6 class="mb-0 text-sm">Michael Levi</h6>
-                    <p class="text-xs text-secondary mb-0">michael@creative-tim.com</p>
-                  </div>
-                </div>
-              </td>
-              <td>
-                <p class="text-xs font-weight-bold mb-0">Programator</p>
-                <p class="text-xs text-secondary mb-0">Developer</p>
-              </td>
-              <td class="align-middle text-center text-sm">
-                <span class="badge badge-sm bg-gradient-success">Online</span>
-              </td>
-              <td class="align-middle text-center">
-                <span class="text-secondary text-xs font-weight-bold">24/12/08</span>
-              </td>
-              <td class="align-middle">
-                <a href="javascript:;" class="text-secondary font-weight-bold text-xs" data-toggle="tooltip" data-original-title="Edit user">
-                  Edit
-                </a>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div class="d-flex px-2 py-1">
-                  <div>
-                    <img src="/static/assets/img/team-2.jpg" class="avatar avatar-sm me-3" alt="user5">
-                  </div>
-                  <div class="d-flex flex-column justify-content-center">
-                    <h6 class="mb-0 text-sm">Richard Gran</h6>
-                    <p class="text-xs text-secondary mb-0">richard@creative-tim.com</p>
-                  </div>
-                </div>
-              </td>
-              <td>
-                <p class="text-xs font-weight-bold mb-0">Manager</p>
-                <p class="text-xs text-secondary mb-0">Executive</p>
-              </td>
-              <td class="align-middle text-center text-sm">
-                <span class="badge badge-sm bg-gradient-secondary">Offline</span>
-              </td>
-              <td class="align-middle text-center">
-                <span class="text-secondary text-xs font-weight-bold">04/10/21</span>
-              </td>
-              <td class="align-middle">
-                <a href="javascript:;" class="text-secondary font-weight-bold text-xs" data-toggle="tooltip" data-original-title="Edit user">
-                  Edit
-                </a>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div class="d-flex px-2 py-1">
-                  <div>
-                    <img src="/static/assets/img/team-4.jpg" class="avatar avatar-sm me-3" alt="user6">
-                  </div>
-                  <div class="d-flex flex-column justify-content-center">
-                    <h6 class="mb-0 text-sm">Miriam Eric</h6>
-                    <p class="text-xs text-secondary mb-0">miriam@creative-tim.com</p>
-                  </div>
-                </div>
-              </td>
-              <td>
-                <p class="text-xs font-weight-bold mb-0">Programtor</p>
-                <p class="text-xs text-secondary mb-0">Developer</p>
-              </td>
-              <td class="align-middle text-center text-sm">
-                <span class="badge badge-sm bg-gradient-secondary">Offline</span>
-              </td>
-              <td class="align-middle text-center">
-                <span class="text-secondary text-xs font-weight-bold">14/09/20</span>
-              </td>
-              <td class="align-middle">
-                <a href="javascript:;" class="text-secondary font-weight-bold text-xs" data-toggle="tooltip" data-original-title="Edit user">
-                  Edit
-                </a>
+                <form method="post" action="{% url 'update-history-action' entry.id 'revert' %}">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-warning">Undo</button>
+                </form>
+                <form method="post" action="{% url 'update-history-action' entry.id 'accept' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success">Accept</button>
+                </form>
               </td>
             </tr>
           </tbody>
+          {% endfor %}
         </table>
+        {% else %}
+        <p>No updates found.</p>
+        {% endif %}
       </div>
     </div>
   </div>
