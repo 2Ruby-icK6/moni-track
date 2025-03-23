@@ -1,49 +1,48 @@
 {% extends 'layouts/base-fullscreen.html' %}
-
+{% load static %}
 {% block title %} Home {% endblock title %}
 
-<!-- Specific CSS goes HERE -->
-{% block stylesheets %}{% endblock stylesheets %}
-
 {% block content %}
-<div class="min-height-300 bg-dark position-absolute w-100"></div>
+<!-- Background Image -->
+<div class="container-fluid min-vh-100" 
+     style="background-image: url('{% static 'assets/img/comb.png' %}'); 
+            background-size: cover; 
+            background-position: center; 
+            background-attachment: fixed;">
 
-<div class="container-fluid py-7">
-  
-  <div class="row mt-4 d-flex justify-content-center">
-    <div class="col-lg-5">
-      <!-- <div class="col-lg-5" style="height: 400px;"> -->
-      <div class="card h-100 d-flex justify-content-center bg-gradient-success">
-        <div class="card-header p-0 mx-3 mt-3 position-relative z-index-1">
-          <a href="{% url 'dashboard' %}" class="bg-gradient-success d-block">
-            <img src="/static/assets/img/HomeInfra.png" class="img-fluid border-radius-lg">
-          </a>
+  <div class="container-fluid py-7">
+    <div class="row mt-5 d-flex justify-content-center">
+      <div class="col-lg-5">
+        <div class="card h-100 d-flex justify-content-center" style="background: linear-gradient(145deg, #429d48,#357b39, #3c9040);">
+          <div class="card-header p-0 mx-3 mt-3 position-relative z-index-1">
+            <a href="{% url 'dashboard' %}" class="d-block" style="background: linear-gradient(145deg, #429d48,#357b39, #3c9040);">
+              <img src="{% static 'assets/img/HomeInfra.png' %}" class="img-fluid border-radius-lg ">
+            </a>
+          </div>
+          <div class="mt-2 d-flex justify-content-center">
+            <a href="{% url 'dashboard' %}" class="btn bg-gradient-success btn-lg fw-bold">Infrastructure</a>
+          </div>
         </div>
-        <div class="mt-2 d-flex justify-content-center">
-          <a href="{% url 'dashboard' %}" class="btn bg-gradient-warning btn-lg fw-bold">Infrastructure</a>
+      </div>
+      <div class="col-lg-3">
+        <div class="card h-100 d-flex justify-content-center" style="background: linear-gradient(145deg, #429d48,#357b39, #3c9040);">
+          <div class="card-header p-0 mx-3 mt-3 position-relative z-index-1">
+            <a href="#" class="d-block" style="background: linear-gradient(145deg, #429d48,#357b39, #3c9040);">
+              <img src="{% static 'assets/img/PGP-Logo.png' %}" class="img-fluid border-radius-lg">
+            </a>
+          </div>
+          <div class="mt-2 d-flex justify-content-center">
+            <a href="#" class="btn bg-danger btn-lg fw-bold text-white">Non-Infrastructure</a>
+          </div>
         </div>
       </div>
     </div>
-    <div class="col-lg-5">
-      <div class="card h-100 d-flex justify-content-center bg-gradient-success">
-        <div class="card-header p-0 mx-3 mt-3 position-relative z-index-1">
-          <a href="#" class="bg-gradient-success d-block">
-            <img src="/static/assets/img/carousel-2.jpg" class="img-fluid border-radius-lg">
-          </a>
-        </div>
-        <div class="mt-2 d-flex justify-content-center">
-          <a href="#" class="btn bg-gradient-warning btn-lg fw-bold">Non-Infrastructure</a>
-        </div>
-      </div>
-    </div>
+  </div>
 </div>
-
 {% endblock content %}
 
 <!-- Specific JS goes HERE --> 
 {% block javascripts %}
-
-  <script src="/static/assets/vendor/chart.js/dist/Chart.min.js"></script>
-  <script src="/static/assets/vendor/chart.js/dist/Chart.extension.js"></script>
-
+  <script src="{% static 'assets/vendor/chart.js/dist/Chart.min.js' %}"></script>
+  <script src="{% static 'assets/vendor/chart.js/dist/Chart.extension.js' %}"></script>
 {% endblock javascripts %}

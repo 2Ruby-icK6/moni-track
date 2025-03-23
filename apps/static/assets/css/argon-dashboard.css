@@ -3865,7 +3865,7 @@ fieldset:disabled .btn {
   --bs-btn-border-color: #5e72e4;
   --bs-btn-hover-color: #000;
   --bs-btn-hover-bg: rgb(118.15, 135.15, 232.05);
-  --bs-btn-hover-border-color: rgb(110.1, 128.1, 230.7);
+  --bs-btn-hover-border-color: hwb(231 0% 0%);
   --bs-btn-focus-shadow-rgb: 80, 97, 194;
   --bs-btn-active-color: #000;
   --bs-btn-active-bg: rgb(126.2, 142.2, 233.4);
@@ -21755,8 +21755,8 @@ fieldset:disabled .btn {
 .btn.bg-gradient-primary:not(:disabled):not(.disabled).active,
 .btn.bg-gradient-primary:not(:disabled):not(.disabled):active,
 .show>.btn.bg-gradient-primary.dropdown-toggle {
-  color: color-yiq(#5e72e4);
-  background-color: #5e72e4;
+  color: color-yiq(#1f3bd9);
+  background-color: #1f3bd9;
 }
 
 .btn-primary.focus,
@@ -26313,6 +26313,7 @@ p {
 .text-gradient {
   background-clip: text;
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   position: relative;
   z-index: 1;

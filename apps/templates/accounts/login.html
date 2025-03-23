@@ -1,79 +1,92 @@
 {% extends 'layouts/base-fullscreen.html' %}
-
+{% load static %}
 {% block title %} Login {% endblock title %}
 
-<!-- Specific CSS goes HERE -->
-{% block stylesheets %}{% endblock stylesheets %}
-
 {% block content %}
+<div class="page-header min-vh-100" style="background: linear-gradient(115deg, #429d48,#357b39, #ffffff);
+">
+  <div class="container">
+    <div class="row"> 
+      
+      <!-- Left Side: Login Form -->
+      <div class="col-xl-4 col-lg-5 col-md-7 d-flex flex-column mx-lg-0 mx-auto "> 
+        <div class="card card-plain " >
+          <div class="card-header pb-0 text-start text-white" style="background-color:rgba(255, 255, 255, 0);">
 
+            <h3 class="font-weight-bolder text-white" style="text-shadow: 2px 2px 2px #000000;">Welcome to PPDO Portal</h3>
 
-    <div class="page-header min-vh-100">
-      <div class="container">
-        <div class="row">
-          <div class="col-xl-4 col-lg-5 col-md-7 d-flex flex-column mx-lg-0 mx-auto">
-            <div class="card card-plain">
-              <div class="card-header pb-0 text-start">
-                <h4 class="font-weight-bolder">Log In</h4>
-
-                {% if msg %}
-                  <p class="mb-0">{{ msg }}</p>
-                {% else %}
-                  <p class="mb-0">
-                    Add your credentials
-                  </p>
-                {% endif %}  
-
-              </div>
-
-              <div class="card-body">
-
-                <form role="form" method="POST">
-                  {% csrf_token %}
-
-                  <div class="mb-3">
-                    {{ form.username }}
-                  </div>
-
-                  <div class="mb-3">
-                    {{ form.password }}
-                  </div>
-
-                  <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="rememberMe">
-                    <label class="form-check-label" for="rememberMe">Remember me</label>
-                  </div>
-
-                  <div class="text-center">
-                    <button type="submit" class="btn btn-lg btn-primary btn-lg w-100 mt-4 mb-0">Sign in</button>
-                  </div>
-
-                </form>
-
-              </div>
-              <div class="card-footer text-center pt-0 px-lg-2 px-1">
-                <p class="mb-4 text-sm mx-auto">
-                  Don't have an account?
-                  <a href="{% url 'register' %}" class="text-primary text-gradient font-weight-bold">Sign up</a>
-                </p>
-              </div>
-            </div>
+            {% if msg %}
+              <p class="mb-0" style= "text-shadow: 2px 2px 2px #000000;">{{ msg }}</p>
+            {% else %}
+              <p class="mb-0" style= "text-shadow: 2px 2px 2px #000000;">Enter your credentials</p>
+            {% endif %}  
           </div>
-          <div class="col-6 d-lg-flex d-none h-100 my-auto pe-0 position-absolute top-0 end-0 text-center justify-content-center flex-column">
-            <div class="position-relative bg-gradient-primary h-100 m-3 px-7 border-radius-lg d-flex flex-column justify-content-center overflow-hidden" style="background-image: url('https://raw.githubusercontent.com/creativetimofficial/public-assets/master/argon-dashboard-pro/assets/img/signin-ill.jpg');
-        background-size: cover;">
-              <span class="mask bg-gradient-primary opacity-6"></span>
-              <h4 class="mt-5 text-white font-weight-bolder position-relative">"Attention is the new currency"</h4>
-              <p class="text-white position-relative">The more effortless the writing looks, the more effort the writer actually put into the process.</p>
-            </div>
+
+          <div class="card-body">
+            <form role="form" method="POST">
+              {% csrf_token %}
+
+              <div class="mb-3">
+                {{ form.username }}
+              </div>
+
+              <div class="mb-3">
+                {{ form.password }}
+              </div>
+
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="rememberMe">
+                <label class="form-check-label text-white" for="rememberMe">Remember me</label> 
+              </div>
+
+              <div class="text-center">
+                <button type="submit" class="btn btn-lg btn-primary btn-lg w-100 mt-4 mb-0 bg-success ">Sign in</button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
-    </div>
 
+      <!-- Right Side with Background Image and Glass Effect -->
+      <div class="col-6 d-lg-flex d-none h-100 my-auto pe-0 position-absolute top-0 end-0 text-center justify-content-center flex-column"
+          style="background-image: url({% static 'assets/img/bg-Capitol.jpg' %}); background-size: cover; background-position: center; position: relative;">
+        
+        <!-- Glass Effect Overlay -->
+        <div class="position-absolute top-0 start-0 w-100 h-100"
+            style="background: rgba(255, 255, 255, 0.034); 
+                    backdrop-filter: blur(2px); 
+                    -webkit-backdrop-filter: blur(2px);
+                    border-radius: 10px;">
+        </div>
+
+        <!-- Content -->
+        <div class="position-relative h-100 m-3 px-7 border-radius-lg d-flex flex-column justify-content-center align-items-center text-white">
+          <img src="{% static 'assets/img/PGP-LOGO.png' %}" alt="Logo" class="mb-1" style="max-width: 150px;">
+          
+            <h2 class="text-white" style="font-size: 4rem; letter-spacing: 4px; font-family: 'Arial Black'; text-shadow: 2px 2px 2px #000000;">
+                PPDO
+            </h2>
+
+            <h4 class="font-weight-bolder text-white" style="text-shadow: 2px 2px 2px #000000;">Provincial Planning and <br>Development Office</h4>
+         
+
+        </div>
+
+      </div> <!-- End Right Side -->
     
+    </div> <!-- End Row -->
+  </div> <!-- End Container -->
+</div> <!-- End Page Header -->
 
 {% endblock content %}
 
-<!-- Specific JS goes HERE --> 
 {% block javascripts %}{% endblock javascripts %}
+
+
+<!--             <p class="fw-light text-center" style="font: font-size: 1rem; max-width: 80%; line-height: 1.5; letter-spacing: 1px; opacity: 0.9; text-shadow: 2px 2px 2px #000000;">
+              <span style="font-family: 'Arial Black'; font-weight: bold;">P</span>rofessionalism <br>
+              <span style="font-family: 'Arial Black'; font-weight: bold;">P</span>roficiency <br>
+              <span style="font-family: 'Arial Black'; font-weight: bold;">D</span>edication <br>
+              <span style="font-family: 'Arial Black'; font-weight: bold;">O</span>ptimism
+              
+            </p> -->
