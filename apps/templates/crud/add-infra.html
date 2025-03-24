@@ -1,236 +1,202 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %} Update {% endblock title %}
+{% block title %} Add Project {% endblock title %}
 
 {% block content %}
 <div class="container-fluid py-3">
   <div class="card">
     <div class="card-header pb-0">
       <div class="d-flex justify-content-between">
-        <p class="mb-0">Select Project</p>
-        <a href="mon/update-history.html" class="btn bg-gradient-info btn-sm ms-auto d-flex gap-1 align-items-center justify-content-center">
+        <p class="mb-0">Add New Project</p>
+        <a href="{% url 'add-history' %}" class="btn bg-gradient-info btn-sm ms-auto d-flex gap-1 align-items-center justify-content-center">
           <i class="ni ni-book-bookmark me-sm-1"></i>
-          <span class="d-sm-inline d-none">Update History</span>
+          <span class="d-sm-inline d-none">View History</span>
         </a>
       </div>
     </div>
+
     <div class="card-body pt-0">
-      <form action="">
-        <div class="row gx-4">
-            <div class="col-md-2">
-            <div class="form-group">
-              <label for="example-text-input" class="form-control-label">Project Number</label>
-              {{ form.search_project_number }}
-            </div>
-          </div>
-          <div class="col-md-10">
-            <div class="form-group">
-              <label for="example-text-input" class="form-control-label">Project Title</label>
-              {{ form.search_project_name }}
-            </div>
-          </div>
-        </div>
-        <button type="submit" class="btn btn-sm bg-gradient-warning d-flex gap-1 align-items-center justify-content-center">
-          <i class="fas fa-search me-sm-1"></i>
-          <span class="d-sm-inline d-none">Find</span></button>
-      </form>
-    </div>
-  </div>
-</div>
-
-<div class="container-fluid mt-0">
-  <div class="card">
-    <div class="card-header pb-0">
-      <div class="d-flex align-items-center">
-        <p class="mb-0">Update Project 
-          <br> Selected:
-          {% if project %} <br> <span class="badge bg-success text-white">{{ project.project_number }}. {{ project.project_name }}</span> 
-          {% else %} <br> <span class="badge bg-danger text-white">Please select...</span>  {% endif %}</p>
-
-        <button type="submit" class="btn btn-sm bg-gradient-danger ms-auto d-flex gap-1 align-items-center justify-content-center">
-          <i class="fas fa-ban me-sm-1"></i>
-          <span class="d-sm-inline d-none">Cancel</span></button>
-      </div>
-    </div>
-    <div class="card-body">
-      {% if project %}
-
-      <form method="POST" action="{% if project %}{% url 'update_data_with_pk' pk=project.pk %}{% endif %}">
+      <form method="POST">
         {% csrf_token %}
-      <p class="text-uppercase text-sm">Project Details</p>
-      <div class="row">
-        <div class="col-md-2">
-          <div class="form-group">
-            <label for="example-text-input" class="form-control-label">Project ID</label>
+
+        <!-- Display Form Errors -->
+        {% if form.errors or timeline_formset.errors or contract_formset.errors %}
+        <div class="alert alert-danger">
+          <strong>There were errors in your submission:</strong>
+          <ul>
+            {% for field, error_list in form.errors.items %}
+              {% for error in error_list %}
+                <li>{{ field|title }}: {{ error }}</li>
+              {% endfor %}
+            {% endfor %}
+
+            {% for form in timeline_formset %}
+              {% for field, error_list in form.errors.items %}
+                {% for error in error_list %}
+                  <li>{{ field|title }} (Timeline): {{ error }}</li>
+                {% endfor %}
+              {% endfor %}
+            {% endfor %}
+
+            {% for form in contract_formset %}
+              {% for field, error_list in form.errors.items %}
+                {% for error in error_list %}
+                  <li>{{ field|title }} (Contract): {{ error }}</li>
+                {% endfor %}
+              {% endfor %}
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+
+        <!-- Project Form Fields -->
+        <div class="row">
+          <div class="col-md-6">
+            <label for="{{ form.project_name.id_for_label }}" class="form-label">Project Name</label>
+            {{ form.project_name }}
+          </div>
+          <div class="col-md-6">
+            <label for="{{ form.project_ID.id_for_label }}" class="form-label">Project ID</label>
             {{ form.project_ID }}
           </div>
         </div>
-        <div class="col-md-10">
-          <div class="form-group">
-            <label for="example-text-input" class="form-control-label">Project Name</label>
-            {{ form.project_name }}
-          </div>
-        </div>
-        <div class="col-md-8">
-          <div class="form-group">
-            <label for="example-text-input" class="form-control-label">Category</label>
-            {{ form.category }}
-          </div>
-        </div>
-        <div class="col-md-4">
-          <div class="form-group">
-            <label for="example-text-input" class="form-control-label">Sub Category</label>
-            {{ form.sub_category }}
-          </div>
-        </div>
-        <div class="col-md-8">
-          <div class="form-group">
-            <label for="example-text-input" class="form-control-label">Location</label>
-            {{ form.location }}
-          </div>
-        </div>
-        <div class="col-md-4">
-          <div class="form-group">
-            <label for="example-text-input" class="form-control-label">Municipality</label>
-            {{ form.municipality }}
-          </div>
-        </div>
-        <div class="col-md-12">
-          <div class="form-group">
-            <label for="example-text-input" class="form-control-label">Project Description</label>
+
+        <div class="row mt-3">
+          <div class="col-md-12">
+            <label for="{{ form.project_description.id_for_label }}" class="form-label">Project Description</label>
             {{ form.project_description }}
           </div>
         </div>
-        <div class="col-md-8">
-          <div class="form-group">
-            <label for="example-text-input" class="form-control-label">Source of Fund</label>
+
+        <div class="row mt-3">
+          <div class="col-md-6">
+            <label for="{{ form.location.id_for_label }}" class="form-label">Location</label>
+            {{ form.location }}
+          </div>
+          <div class="col-md-6">
+            <label for="{{ form.municipality.id_for_label }}" class="form-label">Municipality</label>
+            {{ form.municipality }}
+          </div>
+        </div>
+
+        <div class="row mt-3">
+          <div class="col-md-4">
+            <label for="{{ form.category.id_for_label }}" class="form-label">Category</label>
+            {{ form.category }}
+          </div>
+          <div class="col-md-4">
+            <label for="{{ form.sub_category.id_for_label }}" class="form-label">Sub Category</label>
+            {{ form.sub_category }}
+          </div>
+          <div class="col-md-4">
+            <label for="{{ form.fund.id_for_label }}" class="form-label">Source of Fund</label>
             {{ form.fund }}
           </div>
         </div>
-        <div class="col-md-2">
-          <div class="form-group">
-            <label for="example-text-input" class="form-control-label">Implementing Office</label>
+
+        <div class="row mt-3">
+          <div class="col-md-6">
+            <label for="{{ form.office.id_for_label }}" class="form-label">Office</label>
             {{ form.office }}
           </div>
-        </div>
-        <div class="col-md-2">
-          <div class="form-group">
-            <label for="example-text-input" class="form-control-label">Year</label>
+          <div class="col-md-6">
+            <label for="{{ form.year.id_for_label }}" class="form-label">Year</label>
             {{ form.year }}
           </div>
         </div>
-      </div>
-      <hr class="horizontal dark">
-      <p class="text-uppercase text-sm">Contract Information</p>
-      {{ contract_formset.management_form }}
-      {% for form in contract_formset %}
-      <div class="row">
-        <div class="col-md-3">
-          <div class="form-group">
-            <label for="example-text-input" class="form-control-label">Project Cost</label>
-            {{ form.project_cost }}
-          </div>
+
+        <!-- Project Timeline Formset -->
+        <div class="mt-4">
+          <h5>Project Timeline</h5>
+          {{ timeline_formset.management_form }}
+          {% for form in timeline_formset %}
+            <div class="row border rounded p-3 mb-3">
+              <div class="col-md-3">
+                <label for="{{ form.cd.id_for_label }}" class="form-label">CD</label>
+                {{ form.cd }}
+              </div>
+              <div class="col-md-3">
+                <label for="{{ form.ntp_date.id_for_label }}" class="form-label">NTP Date</label>
+                {{ form.ntp_date }}
+              </div>
+              <div class="col-md-3">
+                <label for="{{ form.extension.id_for_label }}" class="form-label">Extension</label>
+                {{ form.extension }}
+              </div>
+              <div class="col-md-3">
+                <label for="{{ form.target_completion_date.id_for_label }}" class="form-label">Target Completion</label>
+                {{ form.target_completion_date }}
+              </div>
+              <div class="col-md-3">
+                <label for="{{ form.revised_completion_date.id_for_label }}" class="form-label">Revised Completion</label>
+                {{ form.revised_completion_date }}
+              </div>
+              <div class="col-md-3">
+                <label for="{{ form.date_completed.id_for_label }}" class="form-label">Date Completed</label>
+                {{ form.date_completed }}
+              </div>
+              <div class="col-md-3">
+                <label for="{{ form.total_cost_incurred_to_date.id_for_label }}" class="form-label">Total Cost Incurred</label>
+                {{ form.total_cost_incurred_to_date }}
+              </div>
+              <div class="col-md-9">
+                <label for="{{ form.reason.id_for_label }}" class="form-label">Reason</label>
+                {{ form.reason }}
+              </div>
+              <div class="col-md-3 d-flex align-items-end">
+                {{ form.DELETE }} <label class="form-check-label ms-1">Remove</label>
+              </div>
+            </div>
+          {% endfor %}
         </div>
-        <div class="col-md-3">
-          <div class="form-group">
-            <label for="example-text-input" class="form-control-label">Contract Cost</label>
-            {{ form.contract_cost }}
-          </div>
+
+        <!-- Contract Formset -->
+        <div class="mt-4">
+          <h5>Contract Details</h5>
+          {{ contract_formset.management_form }}
+          {% for form in contract_formset %}
+            <div class="row border rounded p-3 mb-3">
+              <div class="col-md-3">
+                <label for="{{ form.project_cost.id_for_label }}" class="form-label">Project Cost</label>
+                {{ form.project_cost }}
+              </div>
+              <div class="col-md-3">
+                <label for="{{ form.contract_cost.id_for_label }}" class="form-label">Contract Cost</label>
+                {{ form.contract_cost }}
+              </div>
+              <div class="col-md-3">
+                <label for="{{ form.quarter.id_for_label }}" class="form-label">Quarter</label>
+                {{ form.quarter }}
+              </div>
+              <div class="col-md-3">
+                <label for="{{ form.procurement.id_for_label }}" class="form-label">Procurement</label>
+                {{ form.procurement }}
+              </div>
+              <div class="col-md-3">
+                <label for="{{ form.project_contractor.id_for_label }}" class="form-label">Contractor</label>
+                {{ form.project_contractor }}
+              </div>
+              <div class="col-md-3">
+                <label for="{{ form.tin_number.id_for_label }}" class="form-label">TIN Number</label>
+                {{ form.tin_number }}
+              </div>
+              <div class="col-md-3">
+                <label for="{{ form.remarks.id_for_label }}" class="form-label">Remarks</label>
+                {{ form.remarks }}
+              </div>
+              <div class="col-md-3 d-flex align-items-end">
+                {{ form.DELETE }} <label class="form-check-label ms-1">Remove</label>
+              </div>
+            </div>
+          {% endfor %}
         </div>
-        <div class="col-md-3">
-          <div class="form-group">
-            <label for="example-text-input" class="form-control-label">Mode of Procurement</label>
-            {{ form.procurement }}
-          </div>
+
+        <!-- Submit Button -->
+        <div class="text-center mt-4">
+          <button type="submit" class="btn btn-lg bg-gradient-info">Save Project</button>
         </div>
-        <div class="col-md-3">
-          <div class="form-group">
-            <label for="example-text-input" class="form-control-label">Quarter</label>
-            {{ form.quarter }}
-          </div>
-        </div>
-        <div class="col-md-6  ">
-          <div class="form-group">
-            <label for="example-text-input" class="form-control-label">Project Contractor</label>
-            
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="form-group">
-            <label for="example-text-input" class="form-control-label">Tin Number</label>
-            
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="form-group">
-            <label for="example-text-input" class="form-control-label">General Remarks</label>
-            {{ form.remarks }}
-          </div>
-        </div>
-      </div>
-      {% endfor %}
-      <hr class="horizontal dark">
-      <p class="text-uppercase text-sm">Project Timeline Information</p>
-      {{ timeline_formset.management_form }}
-      {% for form in timeline_formset %}
-      <div class="row">
-        <div class="col-md-2">
-          <div class="form-group">
-            <label for="example-text-input" class="form-control-label">C D</label>
-            {{ form.cd }}
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="form-group">
-            <label for="example-text-input" class="form-control-label">NTP Date</label>
-            {{ form.ntp_date }}
-          </div>
-        </div>
-        <div class="col-md-2">
-          <div class="form-group">
-            <label for="example-text-input" class="form-control-label">Number of Extension</label>
-            {{ form.extension }}
-          </div>
-        </div>
-        <div class="col-md-5">
-          <div class="form-group">
-            <label for="example-text-input" class="form-control-label">Target Completion Date</label>
-            {{ form.target_completion_date }}
-          </div>
-        </div>
-        <div class="col-md-2">
-          <div class="form-group">
-            <label for="example-text-input" class="form-control-label">Total Cost Incurred to Date</label>
-            {{ form.total_cost_Incurred_to_date }}
-          </div>
-        </div>
-        <div class="col-md-5">
-          <div class="form-group">
-            <label for="example-text-input" class="form-control-label">Revised Completion Date</label>
-            {{ form.revised_completion_date }}
-          </div>
-        </div>
-        <div class="col-md-5">
-          <div class="form-group">
-            <label for="example-text-input" class="form-control-label">Date Completed</label>
-            {{ form.date_completed }}
-          </div>
-        </div>
-        <div class="col-md-12">
-          <div class="form-group">
-            <label for="example-text-input" class="form-control-label">Reason</label>
-            {{ form.reason }}
-          </div>
-        </div>
-      </div>
-      {% endfor %}
-      <button type="submit" class="btn btn-sm bg-gradient-success d-flex gap-1 align-items-center justify-content-center">
-        <i class="ni ni-check-bold me-sm-1"></i>
-        <span class="d-sm-inline d-none">Update</span></button>
+      </form>
     </div>
-    {% else %}
-      <p class="text-danger">No matching record found.</p> 
-      {% endif %}
   </div>
 </div>
 

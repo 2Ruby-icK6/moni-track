@@ -10,6 +10,7 @@ from apps.home import views
 from apps.home.views import ProjectListView, ProjectTableView, ProjectFlexTableView
 from apps.home.views import DonwloadTablePreview, UpdateDataView, UpdateHistoryView, UpdateHistoryActionView
 from apps.home.views import ImportAndPreviewView, discard_data, preview_merge_data, merge_selected_data
+from apps.home.views import CreateDataView, AddHistoryView, DeleteHistoryView
 
 urlpatterns = [
 
@@ -33,6 +34,10 @@ urlpatterns = [
 
     path("merge-preview/", preview_merge_data, name="merge_preview"),
     path("merge-selected/", merge_selected_data, name="merge_selected_data"),
+
+    path('create/', CreateDataView.as_view(), name='add_project'),
+    path('create-history/', AddHistoryView.as_view(), name='add-history'),
+    path('history/delete/<int:pk>/', DeleteHistoryView.as_view(), name='delete_history'),
 
 
     # Matches any html file

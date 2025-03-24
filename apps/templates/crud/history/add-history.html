@@ -1,0 +1,378 @@
+{% extends 'layouts/base.html' %}
+
+{% load custom_filters %}
+
+{% block title %} Add History {% endblock title %}
+
+{% block content %}
+
+<div class="container-fluid py-4">
+  <div class="row">
+    <div class="col-12">
+      <div class="card mb-4">
+        <div class="card-header pb-0">
+          <div class="d-flex justify-content-between">
+            <h6>New Project History</h6>
+
+            <div class="d-flex gap-3">
+
+              <!-- Column Selector Dropdown -->
+              <div class="dropdown">
+                <button class="btn btn-sm bg-gradient-success dropdown-toggle" type="button" data-toggle="dropdown">
+                  Select Columns
+                </button> 
+                <div class="dropdown-menu p-3" id="columnSelector" style="max-height: 300px; overflow-y: auto;">
+                  <div class="d-flex gap-2 justify-content-between mb-2">
+                    <button class="btn btn-sm bg-gradient-success" id="selectAll">Select All</button>
+                    <button class="btn btn-sm bg-gradient-danger" id="unselectAll">Unselect All</button>  
+                  </div>
+                  <hr class="my-1">
+                  {% for column in column_list %}
+                    <div class="form-check dropdown-item">
+                      <label class="form-check-label text-black fw-semibold" for="col-{{ column }}">
+                        <input class="form-check-input column-toggle" type="checkbox" value="{{ column }}" id="col-{{ column }}" checked>
+                        <span class="form-check-label"></span>
+                        {{ column_display_names|get_item:column|default:column }}
+                      </label>
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+  
+              <!-- Filter Dropdown -->
+              <div class="dropdown">
+                <button class="btn btn-sm bg-gradient-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                  Filters
+                </button>
+                <div class="dropdown-menu p-3" id="filterDropdown" style="max-height: 300px; overflow-y: auto; width: 250px;">
+                  <form method="GET" id="filterForm">
+                    <input type="hidden" name="page" value="{{ request.GET.page }}">
+
+                    <div class="mb-2">
+                      <label for="categoryFilter">Category</label>
+                      <select class="form-control" name="category" id="categoryFilter">
+                        <option value="">All</option>
+                        {% for category in category %}
+                          <option value="{{ category }}" {% if request.GET.category == category %}selected{% endif %}>{{ category }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+
+                    <div class="mb-2">
+                      <label for="subcategoryFilter">Sub Category</label>
+                      <select class="form-control" name="sub_category" id="subcategoryFilter">
+                        <option value="">All</option>
+                        {% for sub_category in sub_category %}
+                          <option value="{{ sub_category }}" {% if request.GET.sub_category == sub_category %}selected{% endif %}>{{ sub_category }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+
+                    <div class="mb-2">
+                      <label class="form-label" for="municipalityFilter">Municipality</label>
+                      <select class="form-control" name="municipality" id="municipalityFilter">
+                        <option value="">All</option>
+                        {% for municipality in municipality %}
+                          <option value="{{ municipality }}" {% if request.GET.municipality == municipality %}selected{% endif %}>{{ municipality }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+
+                    <!-- Year Range Filter -->
+                    <div class="mb-2 d-flex gap-2 align-items-center">
+                      <div class="w-50">
+                        <label for="startYearFilter">Start Year</label>
+                        <input type="number" class="form-control" name="start_year" id="startYearFilter" 
+                              value="{{ request.GET.start_year }}" placeholder="YYYY">
+                      </div>
+                      <div class="w-50">
+                        <label for="endYearFilter">End Year</label>
+                        <input type="number" class="form-control" name="end_year" id="endYearFilter" 
+                              value="{{ request.GET.end_year }}" placeholder="YYYY">
+                      </div>
+                    </div>
+
+                    <div class="mb-2">
+                      <label for="fundFilter">Funding Source</label>
+                      <select class="form-control" name="fund" id="fundFilter">
+                        <option value="">All</option>
+                        {% for fund in fund %}
+                          <option value="{{ fund }}" {% if request.GET.fund == fund %}selected{% endif %}>{{ fund }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+
+                    <div class="mb-2">
+                      <label for="remarksFilter">Remarks</label>
+                      <select class="form-control" name="remarks" id="remarksFilter">
+                        <option value="">All</option>
+                        {% for remark in remark %}
+                          <option value="{{ remark }}" {% if request.GET.remarks == remark %}selected{% endif %}>{{ remark }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100 mt-2">Apply Filters</button>
+                    <a href="{% url 'project_flextable' %}" class="btn btn-secondary w-100 mt-2">Reset</a>
+                  </form>
+                </div>
+              </div>
+  
+              <a href="{% url 'add_project' %}" class="btn btn-sm bg-gradient-success d-flex gap-1 align-items-center justify-content-center">
+                <i class="ni ni-curved-next me-sm-1"></i>
+                <span class="d-sm-inline d-none">Back</span>
+              </a>
+
+            </div>
+
+          </div>          
+        </div>
+        <div class="card-body px-0 pt-0 pb-2">
+          <div class="table-responsive p-0">
+            <table class="table">
+              <thead>
+                <tr>
+                  {% for column in column_list %}
+                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7" data-column="{{ column }}">
+                      {{ column_display_names|get_item:column|default:column }}
+                    </th>                
+                  {% endfor %}
+                </tr>
+              </thead>
+              <tbody id="table-body">
+                {% for data in history %}
+                  <tr>
+                    {% for column in column_list %}
+                      <td class="column-data 
+                      {% if column == 'project_cost' or column == 'contract_cost'%}currency-value{% endif %} 
+                      {% if column == 'quarter' %}percentage-value{% endif %} 
+                      {% if column == 'project_number' %}text-center align-middle{% endif %}" 
+                      data-column="{{ column }}">{{ data|getattr_filter:column }}</td>
+                    {% endfor %}
+                    <td>
+                      <form action="{% url 'delete_history' data.id %}" method="POST">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-sm bg-gradient-danger btn-sm delete-btn">Delete</button>
+                      </form>
+                  </td>
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td colspan="{{ column_list|length }}" class="text-center">No results found</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+          </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% include "includes/pagination.html" %}
+
+</div>
+
+<div class="fixed-plugin">
+  <a class="fixed-plugin-button text-dark position-fixed px-3 py-2">
+    <i class="fa fa-cog py-2"> </i>
+  </a>
+  <div class="card shadow-lg">
+    <div class="card-header pb-0 pt-3 ">
+      <div class="float-start">
+        <h5 class="mt-3 mb-0">Argon Configurator</h5>
+        <p>See our dashboard options.</p>
+      </div>
+      <div class="float-end mt-4">
+        <button class="btn btn-link text-dark p-0 fixed-plugin-close-button">
+          <i class="fa fa-close"></i>
+        </button>
+      </div>
+      <!-- End Toggle Button -->
+    </div>
+    <hr class="horizontal dark my-1">
+    <div class="card-body pt-sm-3 pt-0 overflow-auto">
+      <!-- Sidebar Backgrounds -->
+      <div>
+        <h6 class="mb-0">Sidebar Colors</h6>
+      </div>
+      <a href="javascript:void(0)" class="switch-trigger background-color">
+        <div class="badge-colors my-2 text-start">
+          <span class="badge filter bg-gradient-primary active" data-color="primary" onclick="sidebarColor(this)"></span>
+          <span class="badge filter bg-gradient-dark" data-color="dark" onclick="sidebarColor(this)"></span>
+          <span class="badge filter bg-gradient-info" data-color="info" onclick="sidebarColor(this)"></span>
+          <span class="badge filter bg-gradient-success" data-color="success" onclick="sidebarColor(this)"></span>
+          <span class="badge filter bg-gradient-warning" data-color="warning" onclick="sidebarColor(this)"></span>
+          <span class="badge filter bg-gradient-danger" data-color="danger" onclick="sidebarColor(this)"></span>
+        </div>
+      </a>
+      <!-- Sidenav Type -->
+      <div class="mt-3">
+        <h6 class="mb-0">Sidenav Type</h6>
+        <p class="text-sm">Choose between 2 different sidenav types.</p>
+      </div>
+      <div class="d-flex">
+        <button class="btn bg-gradient-primary w-100 px-3 mb-2 active me-2" data-class="bg-white" onclick="sidebarType(this)">White</button>
+        <button class="btn bg-gradient-primary w-100 px-3 mb-2" data-class="bg-default" onclick="sidebarType(this)">Dark</button>
+      </div>
+      <p class="text-sm d-xl-none d-block mt-2">You can change the sidenav type just on desktop view.</p>
+      <!-- Navbar Fixed -->
+      <div class="d-flex my-3">
+        <h6 class="mb-0">Navbar Fixed</h6>
+        <div class="form-check form-switch ps-0 ms-auto my-auto">
+          <input class="form-check-input mt-1 ms-auto" type="checkbox" id="navbarFixed" onclick="navbarFixed(this)">
+        </div>
+      </div>
+      <hr class="horizontal dark my-sm-4">
+      <div class="mt-2 mb-5 d-flex">
+        <h6 class="mb-0">Light / Dark</h6>
+        <div class="form-check form-switch ps-0 ms-auto my-auto">
+          <input class="form-check-input mt-1 ms-auto" type="checkbox" id="dark-version" onclick="darkMode(this)">
+        </div>
+      </div>
+      <a class="btn bg-gradient-dark w-100" href="https://www.creative-tim.com/product/argon-dashboard">Free Download</a>
+      <a class="btn btn-outline-dark w-100" href="https://www.creative-tim.com/learning-lab/bootstrap/license/argon-dashboard">View documentation</a>
+      <div class="w-100 text-center">
+        <a class="github-button" href="https://github.com/creativetimofficial/argon-dashboard" data-icon="octicon-star" data-size="large" data-show-count="true" aria-label="Star creativetimofficial/argon-dashboard on GitHub">Star</a>
+        <h6 class="mt-3">Thank you for sharing!</h6>
+        <a href="https://twitter.com/intent/tweet?text=Check%20Argon%20Dashboard%20made%20by%20%40CreativeTim%20%23webdesign%20%23dashboard%20%23bootstrap5&amp;url=https%3A%2F%2Fwww.creative-tim.com%2Fproduct%2Fargon-dashboard" class="btn btn-dark mb-0 me-2" target="_blank">
+          <i class="fab fa-twitter me-1" aria-hidden="true"></i> Tweet
+        </a>
+        <a href="https://www.facebook.com/sharer/sharer.php?u=https://www.creative-tim.com/product/argon-dashboard" class="btn btn-dark mb-0 me-2" target="_blank">
+          <i class="fab fa-facebook-square me-1" aria-hidden="true"></i> Share
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock content %}
+
+<!-- Specific JS goes HERE--> 
+{% block javascripts %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Column Visibility and Formatting
+        const columnToggles = document.querySelectorAll(".column-toggle");
+        const dropdownButton = document.querySelector(".dropdown-toggle");
+        const dropdownMenu = document.getElementById("columnSelector");
+        const selectAllBtn = document.getElementById("selectAll");
+        const unselectAllBtn = document.getElementById("unselectAll");
+        const storedColumns = JSON.parse(localStorage.getItem("selectedColumns")) || {};
+
+        // Convert quarter values into percentage
+        document.querySelectorAll(".percentage-value").forEach(el => {
+            let value = parseFloat(el.innerText.trim());
+            el.innerText = isNaN(value) ? "-----" : (value * 100).toFixed(2) + "%";
+        });
+
+        // Convert project cost into currency format
+        document.querySelectorAll(".currency-value").forEach(el => {
+            let value = parseFloat(el.innerText.trim());
+            el.innerText = isNaN(value) ? "-----" : "P " + value.toLocaleString("en-US");
+        });
+
+        // Prevent dropdown from closing when clicking inside
+        dropdownMenu.addEventListener("click", (event) => event.stopPropagation());
+
+        // Restore column visibility from localStorage
+        columnToggles.forEach(toggle => {
+            const column = toggle.value;
+            const columnElements = document.querySelectorAll(`[data-column='${column}']`);
+
+            if (storedColumns[column] === false) {
+                toggle.checked = false;
+                columnElements.forEach(el => el.style.display = "none");
+            }
+
+            toggle.addEventListener("change", function () {
+                columnElements.forEach(el => el.style.display = toggle.checked ? "" : "none");
+                storedColumns[column] = toggle.checked;
+                localStorage.setItem("selectedColumns", JSON.stringify(storedColumns));
+            });
+        });
+
+        // Select All Columns
+        selectAllBtn.addEventListener("click", function () {
+            columnToggles.forEach(toggle => {
+                toggle.checked = true;
+                document.querySelectorAll(`[data-column='${toggle.value}']`).forEach(el => el.style.display = "");
+                storedColumns[toggle.value] = true;
+            });
+            localStorage.setItem("selectedColumns", JSON.stringify(storedColumns));
+        });
+
+        // Unselect All Columns
+        unselectAllBtn.addEventListener("click", function () {
+            columnToggles.forEach(toggle => {
+                toggle.checked = false;
+                document.querySelectorAll(`[data-column='${toggle.value}']`).forEach(el => el.style.display = "none");
+                storedColumns[toggle.value] = false;
+            });
+            localStorage.setItem("selectedColumns", JSON.stringify(storedColumns));
+        });
+
+        // Toggle dropdown manually when clicking the button
+        dropdownButton.addEventListener("click", function (event) {
+            event.stopPropagation();
+            dropdownMenu.classList.toggle("show");
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener("click", function (event) {
+            if (!dropdownMenu.contains(event.target) && !dropdownButton.contains(event.target)) {
+                dropdownMenu.classList.remove("show");
+            }
+        });
+
+        // Delete Confirmation with SweetAlert
+        document.querySelectorAll(".delete-btn").forEach(button => {
+            button.addEventListener("click", function (event) {
+                event.preventDefault(); // Prevent form submission
+
+                const form = this.closest("form"); // Get the form element
+
+                Swal.fire({
+                    title: "Are you sure?",
+                    text: "This action will permanently delete this entry.",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#d33",
+                    cancelButtonColor: "#3085d6",
+                    confirmButtonText: "Yes, delete it!",
+                    cancelButtonText: "Cancel"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit(); // Submit the form after confirmation
+                    }
+                });
+            });
+        });
+
+        // Discard Data Confirmation
+        const discardDataBtn = document.getElementById("discardDataBtn");
+        if (discardDataBtn) {
+            discardDataBtn.addEventListener("click", function (event) {
+                event.preventDefault(); // Prevent default link behavior
+
+                Swal.fire({
+                    title: "Are you sure?",
+                    text: "This action will delete all imported data and cannot be undone.",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#d33",
+                    cancelButtonColor: "#3085d6",
+                    confirmButtonText: "Yes, discard it!",
+                    cancelButtonText: "Cancel"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = "{% url 'discard_data' %}"; // Redirect to discard view
+                    }
+                });
+            });
+        }
+    });
+</script>
+
+{% endblock javascripts %}

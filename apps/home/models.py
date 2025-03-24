@@ -151,3 +151,45 @@ class DumpRawData(models.Model):
 
     def __str__(self):
         return f"{self.NO} - {self.project_name}"
+    
+# Add Project History Model table ###############################################################################################################
+class AddProjectHistory(BaseModel):
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    project_number = models.IntegerField()
+    project_name = models.TextField(null=True)
+    project_ID = models.TextField(null=True)
+    category = models.TextField(null=True)
+    project_description = models.TextField(null=True, blank=True)
+    location = models.TextField(null=True)
+    municipality = models.TextField(null=True)
+    office = models.TextField(null=True)
+    year = models.IntegerField(null=True)
+    fund = models.TextField(null=True)
+    project_cost = models.DecimalField(null=True, max_digits=15, decimal_places=2)
+    contract_cost = models.DecimalField(null=True, max_digits=15, decimal_places=2)
+    cd = models.IntegerField(null=True, blank=True)
+    ntp_date = models.DateField(null=True, blank=True)
+    extension = models.IntegerField(null=True, blank=True)
+    target_completion_date = models.DateField(null=True, blank=True)
+    revised_completion_date = models.CharField(max_length=50,null=True, blank=True)
+    date_completed = models.DateField(null=True, blank=True)
+    quarter = models.DecimalField(max_digits=5, decimal_places=4, null=True, blank=True)
+    total_cost_incured_to_date = models.TextField(null=True, blank=True)
+    procurement = models.TextField(null=True, blank=True)
+    remarks = models.TextField(null=True)
+    project_contractor = models.TextField(null=True)
+    tin_number = models.TextField(null=True)
+    reason = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.NO} - {self.project_name}"
+    
+    @staticmethod
+    def reset_auto_increment():
+        """
+        Reorders IDs so that there are no gaps in the numbering.
+        """
+        histories = AddProjectHistory.objects.order_by('id')
+        for index, history in enumerate(histories, start=1):
+            if history.id != index:
+                AddProjectHistory.objects.filter(id=history.id).update(id=index)

@@ -107,8 +107,6 @@ class UpdateForm(forms.ModelForm):
 
         return cleaned_data
 
-
-
 class ProjectForm(forms.ModelForm):
     class Meta:
         model = Project
@@ -143,9 +141,9 @@ class ProjectTimelineForm(forms.ModelForm):
         model = ProjectTimeline
         fields = '__all__'
         widgets = {
-            'cd': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter CD'}),
+            'cd': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'placeholder': 'Enter CD'}),
             'ntp_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'extension': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter number of extension'}),
+            'extension': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'placeholder': 'Enter number of extension'}),
             'target_completion_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'revised_completion_date': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Revised Date'}),
             'date_completed': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
@@ -176,9 +174,9 @@ class ContractForm(forms.ModelForm):
         model = Contract
         fields = '__all__'
         widgets = {
-            'project_cost': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter Project cost'}),
-            'contract_cost': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter Contract cost'}),
-            'quarter' : forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter quarter'}),
+            'project_cost': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'placeholder': 'Enter Project cost'}),
+            'contract_cost': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'placeholder': 'Enter Contract cost'}),
+            'quarter' : forms.NumberInput(attrs={'class': 'form-control', 'min': '0.0001', 'max': '1', 'step': '0.0001', 'placeholder': 'Enter quarter'}),
             'procurement': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Procurement'}),
             'project_contractor': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Contractor'}),
             'tin_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Tin number'}),

@@ -16,6 +16,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.conf import settings
 from django.db import connection, models
+from django.forms import modelformset_factory
 
 from django.views import View
 from django.views.generic.list import ListView
@@ -32,7 +33,7 @@ from .models import Project, Contract, ProjectTimeline, DumpRawData
 # Foreign table
 from .models import Category, SubCategory, Municipality, Year, Office, FundSource, Remark
 # History Table
-from .models import UpdateHistory
+from .models import UpdateHistory, AddProjectHistory
 
 #------------- Forms -------------#
 # Auth Form
@@ -895,4 +896,190 @@ def merge_selected_data(request):
 
     return redirect("preview_merge_data")
 
+#------------- Add New Project -------------#
+ProjectTimelineFormSet = inlineformset_factory(Project, ProjectTimeline, form=ProjectTimelineForm, extra=1, can_delete=True)
+ContractFormSet = inlineformset_factory(Project, Contract, form=ContractForm, extra=1, can_delete=True)
 
+class CreateDataView(View):
+    template_name = 'crud/add-infra.html'
+
+    def get(self, request):
+        form = ProjectForm()
+        timeline_formset = ProjectTimelineFormSet(queryset=ProjectTimeline.objects.none())  # Ensure empty form
+        contract_formset = ContractFormSet(queryset=Contract.objects.none())  # Ensure empty form
+
+        return render(request, self.template_name, {
+            'form': form,
+            'timeline_formset': timeline_formset,
+            'contract_formset': contract_formset
+        })
+
+    def post(self, request):
+        form = ProjectForm(request.POST)
+        timeline_formset = ProjectTimelineFormSet(request.POST)
+        contract_formset = ContractFormSet(request.POST)
+
+        if form.is_valid() and timeline_formset.is_valid() and contract_formset.is_valid():
+            new_entry = form.save(commit=False)  # Save without committing to modify ForeignKey fields
+            
+            # Handle Year (Check if exists, else create)
+            if new_entry.year:
+                year_value = int(new_entry.year.year)  # Assuming 'name' holds year values like '2024'
+                existing_year, _ = Year.objects.get_or_create(year=year_value)
+                new_entry.year = existing_year  # Assign the existing or new Year object
+
+            # Assign correct ForeignKey IDs instead of objects
+            category_id = new_entry.category.id if new_entry.category else None
+            municipality_id = new_entry.municipality.id if new_entry.municipality else None
+            fund_id = new_entry.fund.id if new_entry.fund else None
+            office_id = new_entry.office.id if new_entry.office else None
+
+            # Save the new project entry
+            new_entry.save()
+
+            # Save associated ProjectTimeline entries
+            timeline_instances = timeline_formset.save(commit=False)
+            for timeline in timeline_instances:
+                timeline.project = new_entry  # Link to the project
+                timeline.save()
+
+            # Save associated Contract entries
+            contract_instances = contract_formset.save(commit=False)
+            for contract in contract_instances:
+                contract.project = new_entry  # Link to the project
+                contract.save()
+            
+            if timeline_instances:
+                first_timeline = timeline_instances[0]  # Get the first contract instance
+                cd = first_timeline.cd if hasattr(first_timeline, 'cd') else None
+                ntp_date = first_timeline.ntp_date if hasattr(first_timeline, 'ntp_date') else None
+                extension = first_timeline.extension if hasattr(first_timeline, 'extension') else None
+                target_completion_date = first_timeline.target_completion_date if hasattr(first_timeline, 'target_completion_date') else None
+                revised_completion_date = first_timeline.revised_completion_date if hasattr(first_timeline, 'revised_completion_date') else None
+                total_cost_incured_to_date = first_timeline.total_cost_incured_to_date if hasattr(first_timeline, 'total_cost_incured_to_date') else None                
+                date_completed = first_timeline.date_completed if hasattr(first_timeline, 'date_completed') else None                
+                reason = first_timeline.reason if hasattr(first_timeline, 'reason') else None
+            
+            # Extract remarks from the first contract instance (if any exist)
+            remarks_id = None  # Default to None if no contracts exist
+            if contract_instances:
+                first_contract = contract_instances[0]  # Get the first contract instance
+                remarks_id = first_contract.remarks.id if first_contract.remarks else None
+                project_cost = first_contract.project_cost if hasattr(first_contract, 'project_cost') else None
+                contract_cost = first_contract.contract_cost if hasattr(first_contract, 'contract_cost') else None
+                quarter = first_contract.quarter if hasattr(first_contract, 'quarter') else None
+                procurement = first_contract.procurement if hasattr(first_contract, 'procurement') else None                
+                project_contractor = first_contract.project_contractor if hasattr(first_contract, 'project_contractor') else None                
+                tin_number = first_contract.tin_number if hasattr(first_contract, 'tin_number') else None
+
+
+
+            # Log the new project in history
+            AddProjectHistory.objects.create(
+                project_number=new_entry.project_number,
+                project_name=new_entry.project_name,
+                project_ID=new_entry.project_ID,
+                category=category_id,
+                project_description=new_entry.project_description,
+                location=new_entry.location,
+                municipality=municipality_id,
+                office=office_id,
+                year=new_entry.year.id,
+                fund=fund_id,
+                project_cost=project_cost,
+                contract_cost=contract_cost,
+                cd=cd,
+                ntp_date=ntp_date,
+                extension=extension,
+                target_completion_date=target_completion_date,
+                revised_completion_date=revised_completion_date,
+                date_completed=date_completed,
+                quarter=quarter,
+                total_cost_incured_to_date=total_cost_incured_to_date,
+                procurement=procurement,
+                remarks=remarks_id,
+                project_contractor=project_contractor,
+                tin_number=tin_number,
+                reason=reason,
+                updated_by=request.user
+            )
+
+            messages.success(request, "Project successfully added!")
+            return redirect('add-history')
+
+        return render(request, self.template_name, {
+            'form': form,
+            'timeline_formset': timeline_formset,
+            'contract_formset': contract_formset
+        })
+
+class AddHistoryView(View):
+    template_name = 'crud/history/add-history.html'
+
+    def get(self, request):
+        history = AddProjectHistory.objects.all().order_by('-created_at')
+
+        # Define the list of columns and their display names for the preview
+        column_list = [
+            "project_number", "project_name", "project_ID", "category",
+            "project_description", "location", "municipality", "office", "year",
+            "fund", "project_cost", "contract_cost", "cd", "ntp_date", "extension",
+            "target_completion_date", "revised_completion_date", "date_completed",
+            "quarter", "total_cost_incured_to_date", "procurement", "remarks",
+            "contractor", "tin_number", "reason"
+        ]
+        column_display_names = {
+            "project_number": "No.",
+            "project_name": "PGP Project Name",
+            "project_ID": "Project ID",
+            "category": "Project Category",
+            "project_description": "Project Description",
+            "location": "Location",
+            "municipality": "Municipality",
+            "office": "Implementing Office",
+            "year": "Project Year",
+            "fund": "Funding Source",
+            "project_cost": "Project Cost",
+            "contract_cost": "Contract Cost",
+            "cd": "Contract Duration",
+            "ntp_date": "NTP Date",
+            "extension": "Extension",
+            "target_completion_date": "Target Completion Date",
+            "revised_completion_date": "Revised Completion Date",
+            "date_completed": "Date Completed",
+            "quarter": "Quarter",
+            "total_cost_incured_to_date": "Total Cost Incurred to Date",
+            "procurement": "Procurement Mode",
+            "remarks": "General Remarks",
+            "contractor": "Project Contractor",
+            "tin_number": "TIN Number",
+            "reason": "Reason"
+        }
+
+        return render(request, self.template_name, {'history': history, "column_list": column_list, "column_display_names": column_display_names})
+
+class DeleteHistoryView(View):
+    def post(self, request, pk):
+        history_entry = get_object_or_404(AddProjectHistory, pk=pk)
+
+        # Delete related project entry
+        Project.objects.filter(project_number=history_entry.project_number).delete()
+
+        # Delete related Contract and ProjectTimeline records
+        Contract.objects.filter(project__project_number=history_entry.project_number).delete()
+        ProjectTimeline.objects.filter(project__project_number=history_entry.project_number).delete()
+
+        # Delete the history entry
+        history_entry.delete()
+
+        # Reset the auto-increment values
+        self.reset_auto_increment("monitrack.home_project", history_entry.project_number)
+        self.reset_auto_increment("monitrack.home_addprojecthistory", pk)
+
+        messages.success(request, "History entry deleted successfully.")
+        return redirect('add-history')
+
+    def reset_auto_increment(self, table_name, start_value):
+        """Resets the auto-increment value of a table."""
+        with connection.cursor() as cursor:
+            cursor.execute(f"ALTER TABLE {table_name} AUTO_INCREMENT = {start_value};")
