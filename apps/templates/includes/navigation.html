@@ -9,11 +9,19 @@
     </nav>
     <div class="collapse navbar-collapse mt-sm-0 mt-2 me-md-0 me-sm-4" id="navbar">
       <div class="ms-md-auto pe-md-3 d-flex align-items-center">
-        <div class="input-group">
-          <span class="input-group-text text-body"><i class="fas fa-search" aria-hidden="true"></i></span>
-          <input type="text" class="form-control" placeholder="Type here...">
-        </div>
+        {% if show_search_table or show_search_flextable %}
+        <form method="GET" action="{% if show_search_table %}{% url 'project_table' %}{% else %}{% url 'project_flextable' %}{% endif %}">
+          <div class="input-group">
+            <span class="input-group-text text-body">
+              <button type="submit" class="input-group-text">
+                <i class="fas fa-search" aria-hidden="true"></i>
+              </button>
+            </span>
+            <input type="text" value="{{ search_query }}" name="search" class="form-control" placeholder="Search...">
+          </div>
+        </form>
       </div>
+      {% endif %}
       <ul class="navbar-nav  justify-content-end">
         <li class="nav-item d-flex align-items-center">
           <a href="javascript:;" class="nav-link text-white font-weight-bold px-0">

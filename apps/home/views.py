@@ -116,6 +116,7 @@ class ProjectTableView(ListView):
         start_year = self.request.GET.get("start_year", "")
         end_year = self.request.GET.get("end_year", "")
         remark = self.request.GET.get('remarks', "")
+        search_query = self.request.GET.get("search", "")
 
         # Apply filters dynamically
         if category:
@@ -132,11 +133,21 @@ class ProjectTableView(ListView):
             queryset = queryset.filter(year__year__range=(start_year, end_year))
         if remark:
             queryset = queryset.filter(contract__remarks__remark=remark)
+        
+        # Search functionality
+        if search_query:
+            queryset = queryset.filter(
+                Q(project_number__icontains=search_query) |
+                Q(project_name__icontains=search_query)
+            )
 
         return queryset
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        filtered_queryset = self.get_queryset()
+        context['total_results'] = filtered_queryset.count()
 
         # Pass available filter options to the template
         context['category'] = Category.objects.values_list('category', flat=True).distinct().order_by('category')
@@ -146,6 +157,8 @@ class ProjectTableView(ListView):
         context['sub_category'] = SubCategory.objects.values_list('sub_category', flat=True).distinct().order_by('sub_category')
         context['year'] = Year.objects.values_list('year', flat=True).distinct().order_by('year')
         context['remark'] = Remark.objects.values_list('remark', flat=True).distinct().order_by('remark')
+        context['show_search_table'] = True
+        context['show_search_flextable'] = False
 
         # Pass selected filters to the template for form repopulation
         context['selected_filters'] = {
@@ -224,6 +237,9 @@ class ProjectFlexTableView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        filtered_queryset = self.get_queryset()
+        context['total_results'] = filtered_queryset.count()
         
         column_display_names = {
             "project_number": "NO",
@@ -265,6 +281,8 @@ class ProjectFlexTableView(ListView):
             "year": Year.objects.values_list("year", flat=True).order_by("year"),
             "remark": Remark.objects.values_list("remark", flat=True).order_by("remark"),
             "selected_filters": self.request.GET,
+            "show_search_table": False,  # Change based on logic
+            "show_search_flextable": True  # Change based on logic
         })
 
         return context
