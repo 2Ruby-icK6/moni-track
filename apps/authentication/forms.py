@@ -206,3 +206,8 @@ class ContractForm(forms.ModelForm):
                 cleaned_data[field] = None
 
         return cleaned_data
+    
+
+# ============================= Dump table Storage =============================================
+class UploadFileForm(forms.Form):
+    file = forms.FileField()

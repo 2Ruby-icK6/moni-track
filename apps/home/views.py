@@ -13,13 +13,22 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Q, F
 from django.forms import inlineformset_factory
 from django.contrib import messages
+from django.core.paginator import Paginator
+from django.conf import settings
+from django.db import connection, models
 
 from django.views import View
 from django.views.generic.list import ListView
 
+import os
+import re
+import json
+
+from .utils import utils
+
 #------------- Models -------------#
 # Main table
-from .models import Project, Contract, ProjectTimeline
+from .models import Project, Contract, ProjectTimeline, DumpRawData
 # Foreign table
 from .models import Category, SubCategory, Municipality, Year, Office, FundSource, Remark
 # History Table
@@ -27,7 +36,7 @@ from .models import UpdateHistory
 
 #------------- Forms -------------#
 # Auth Form
-from apps.authentication.forms import UpdateForm, ProjectForm, ProjectTimelineForm, ContractForm
+from apps.authentication.forms import UpdateForm, ProjectForm, ProjectTimelineForm, ContractForm, UploadFileForm
 
 #------------- Login -------------#
 @login_required(login_url="/login/")
@@ -111,7 +120,7 @@ class ProjectTableView(ListView):
         if category:
             queryset = queryset.filter(category__category=category)
         if fund:
-            queryset = queryset.filter(fund_source__fund=fund)
+            queryset = queryset.filter(fund__fund=fund)
         if municipality:
             queryset = queryset.filter(municipality__municipality=municipality)
         if office:
@@ -351,7 +360,7 @@ class UpdateDataView(View):
                 if new_value is None:
                     new_value = None
                 
-                print(f"Updating '{field}': '{old_value}' -> '{new_value}'")
+                # print(f"Updating '{field}': '{old_value}' -> '{new_value}'")
                 UpdateHistory.objects.create(
                     project=project,
                     field_name=field,
@@ -487,4 +496,403 @@ class UpdateHistoryActionView(View):
             messages.success(request, f"Accepted change for {field_name}.")
 
         return redirect("update-history")
+
+#------------- Upload File -------------#
+class ImportAndPreviewView(View):
+    template_name = "crud/file/import-file.html"
+
+    def get(self, request):
+        """Handles GET requests - renders the form and paginated data preview."""
+        form = UploadFileForm()
+        context = self.get_context_data(request, form)
+        return render(request, self.template_name, context)
+
+    def post(self, request):
+        """Handles POST requests - processes file upload and data import."""
+        form = UploadFileForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            file = request.FILES["file"]
+            if not file.name.endswith((".xlsx", ".xls")):
+                messages.error(request, "Invalid file format. Please upload an Excel file.")
+                return redirect("import_file")
+
+            try:
+                temp_json_path, data = self.process_file(file)
+
+                quarter_column = self.detect_quarter_column(data)
+                if not quarter_column:
+                    raise ValueError("Error: 'Quarter' column not found in the dataset.")
+
+                # Clear previous imports before adding new data
+                DumpRawData.objects.all().delete()
+
+                self.save_data(data, quarter_column)
+
+                os.remove(temp_json_path)
+
+                messages.success(request, "File uploaded and processed successfully! Preview the data before merging.")
+                return redirect("import_file")
+
+            except Exception as e:
+                messages.error(request, f"Error processing file: {str(e)}")
+                return redirect("import_file")
+
+        context = self.get_context_data(request, form)
+        return render(request, self.template_name, context)
+
+    def process_file(self, file):
+        """Saves file temporarily, converts it to JSON, and returns data."""
+        temp_excel_path = os.path.join(settings.MEDIA_ROOT, file.name)
+        with open(temp_excel_path, "wb+") as destination:
+            for chunk in file.chunks():
+                destination.write(chunk)
+
+        temp_json_path = os.path.splitext(temp_excel_path)[0] + ".json"
+        utils.excel_to_json(temp_excel_path, temp_json_path)
+
+        with open(temp_json_path, "r", encoding="utf-8") as json_file:
+            data = json.load(json_file)
+
+        os.remove(temp_excel_path)  # Remove Excel file after conversion
+        return temp_json_path, data
+
+    def detect_quarter_column(self, data):
+        """Finds the column name matching 'AS OF [MONTH] [YEAR]' format."""
+        for key in data[0].keys():
+            if re.search(r"AS OF [A-Z]+ \d{4}", key, re.IGNORECASE):
+                return key
+        return None
+
+    def save_data(self, data, quarter_column):
+        """Saves the imported data into the database."""
+        for item in data:
+            DumpRawData.objects.create(
+                project_number=item.get("NO.", ""),
+                project_name=item.get("PROVINCIAL GOVERNMENT OF PALAWAN PROJECT NAME", ""),
+                project_ID=item.get("PROJECT ID", ""),
+                category=item.get("PPDO CATEGORY", ""),
+                project_description=item.get("PROJECT DESCRIPTION", ""),
+                location=item.get("LOCATION", ""),
+                municipality=item.get("MUNICIPALITY", ""),
+                office=item.get("IMPLEMENTING OFFICE", ""),
+                year=item.get("YEAR", ""),
+                fund=item.get("SOURCE OF FUND", ""),
+                project_cost=item.get("PROJECT COST", ""),
+                contract_cost=item.get("CONTRACT COST", ""),
+                cd=item.get("C.D", ""),
+                ntp_date=item.get("NTP DATE", ""),
+                extension=item.get("NO. OF EXTENSION", ""),
+                target_completion_date=item.get("TARGET COMPLETION DATE", ""),
+                revised_completion_date=item.get("REVISED COMPLETION DATE", ""),
+                date_completed=item.get("DATE COMPLETED", ""),
+                quarter=item.get(quarter_column, ""),
+                total_cost_incured_to_date=item.get("TOTAL COST INCURED TO DATE", ""),
+                procurement=item.get("MODE OF PROCUREMENT", ""),
+                remarks=item.get("GENERAL REMARKS", ""),
+                project_contractor=item.get("PROJECT CONTRACTOR", ""),
+                tin_number=item.get("TIN NUMBER", ""),
+                reason=item.get("REASON", ""),
+            )
+
+    def get_context_data(self, request, form):
+        """Returns context data including paginated records and display names."""
+        dump_data = DumpRawData.objects.all().order_by("id")
+        paginator = Paginator(dump_data, 10)  # Show 10 rows per page
+        page_number = request.GET.get("page")
+        page_obj = paginator.get_page(page_number)
+
+        column_list = [
+            "project_number", "project_name", "project_ID", "category",
+            "project_description", "location", "municipality", "office", "year",
+            "fund", "project_cost", "contract_cost", "cd", "ntp_date", "extension",
+            "target_completion_date", "revised_completion_date", "date_completed",
+            "quarter", "total_cost_incured_to_date", "procurement", "remarks",
+            "project_contractor", "tin_number", "reason"
+        ]
+
+        column_display_names = {
+            "project_number": "No.",
+            "project_name": "PGP Project Name",
+            "project_ID": "Project ID",
+            "category": "Project Category",
+            "project_description": "Project Description",
+            "location": "Location",
+            "municipality": "Municipality",
+            "office": "Implementing Office",
+            "year": "Project Year",
+            "fund": "Funding Source",
+            "project_cost": "Project Cost",
+            "contract_cost": "Contract Cost",
+            "cd": "Contract Duration",
+            "ntp_date": "NTP Date",
+            "extension": "Extension",
+            "target_completion_date": "Target Completion Date",
+            "revised_completion_date": "Revised Completion Date",
+            "date_completed": "Date Completed",
+            "quarter": "Quarter",
+            "total_cost_incured_to_date": "Total Cost Incurred to Date",
+            "procurement": "Procurement Mode",
+            "remarks": "General Remarks",
+            "project_contractor": "Project Contractor",
+            "tin_number": "TIN Number",
+            "reason": "Reason"
+        }
+
+        return {
+            "form": form,
+            "page_obj": page_obj,
+            "is_paginated": page_obj.has_other_pages(),
+            "total_results": dump_data.count(),
+            "column_list": column_list,
+            "column_display_names": column_display_names
+        }
+
+def discard_data(request):
+    with connection.cursor() as cursor:
+        cursor.execute("TRUNCATE TABLE home_dumprawdata;") 
+
+    messages.success(request, "Imported data has been discarded successfully.")
+    return redirect("import_file")
+
+#------------- Merge Preview -------------#
+def preview_merge_data(request):
+    dump_data = DumpRawData.objects.all()
+    changes = []
+
+    # Foreign key mappings
+    category_mapping = {c.category: c for c in Category.objects.all()}
+    municipality_mapping = {m.municipality: m for m in Municipality.objects.all()}
+    year_mapping = {y.year: y for y in Year.objects.all()}
+    fund_mapping = {f.fund: f for f in FundSource.objects.all()}
+    remark_mapping = {r.remark: r for r in Remark.objects.all()}
+
+    foreign_key_fields = {
+        "category": category_mapping,
+        "municipality": municipality_mapping,
+        "fund": fund_mapping,
+        "year": year_mapping,
+    }
+
+    for dump_entry in dump_data:
+        try:
+            main_entry = Project.objects.get(project_number=dump_entry.project_number)
+        except Project.DoesNotExist:
+            continue
+
+        entry_changes = {
+            "project_number": dump_entry.project_number,
+            "project_name": dump_entry.project_name,
+            "fields": [],
+            "exists": True,
+        }
+
+        # Compare Project Fields
+        project_changes = compare_project_fields(main_entry, dump_entry, foreign_key_fields)
+        entry_changes["fields"].extend(project_changes)
+
+        # Compare Contract Fields
+        try:
+            contract_entry = Contract.objects.get(project=main_entry)
+            contract_changes = compare_contract_fields(contract_entry, dump_entry)
+            entry_changes["fields"].extend(contract_changes)
+        except Contract.DoesNotExist:
+            continue
+
+        # Compare Timeline Fields
+        try:
+            timeline_entry = ProjectTimeline.objects.get(project=main_entry)
+            timeline_changes = compare_timeline_fields(timeline_entry, dump_entry)
+            entry_changes["fields"].extend(timeline_changes)
+        except ProjectTimeline.DoesNotExist:
+            continue
+
+        if entry_changes["fields"]:
+            changes.append(entry_changes)
+
+    return render(request, "crud/file/merge-preview.html", {"changes": changes})
+
+def compare_project_fields(main_entry, dump_entry, foreign_key_fields):
+    """ Compare only fields that belong to the Project model, excluding 'sub_category' """
+    changes = []
+    project_fields = [field.name for field in Project._meta.fields]
+    ignored_fields = ["id", "updated_at", "sub_category"]
+
+    for field_name in project_fields:
+        if field_name in ignored_fields or not hasattr(dump_entry, field_name):
+            continue
+
+        old_value = getattr(main_entry, field_name, None)
+        new_value = getattr(dump_entry, field_name, None)
+
+        if field_name in foreign_key_fields:
+            mapping = foreign_key_fields[field_name]
+            old_value = str(old_value) if old_value else "-"
+            new_value = str(mapping.get(new_value, "-"))
+
+        old_value = str(old_value) if old_value is not None else "-"
+        new_value = str(new_value) if new_value is not None else "-"
+
+        if old_value != new_value:
+            changes.append({
+                "field_name": field_name,
+                "old_value": old_value,
+                "new_value": new_value
+            })
+
+    return changes
+
+def compare_contract_fields(contract_entry, dump_entry):
+    """ Compare only fields that belong to the Contract model """
+    changes = []
+    contract_fields = [field.name for field in Contract._meta.fields]
+
+    for field_name in contract_fields:
+        if field_name in ["id", "project"] or not hasattr(dump_entry, field_name):
+            continue
+
+        old_value = getattr(contract_entry, field_name, None)
+        new_value = getattr(dump_entry, field_name, None)
+
+        if field_name == "remarks":
+            old_value = old_value.remark if old_value else "-"
+            new_value = str(new_value) if new_value else "-"
+
+        old_value = str(old_value) if old_value is not None else "-"
+        new_value = str(new_value) if new_value is not None else "-"
+
+        if old_value != new_value:
+            changes.append({
+                "field_name": field_name,
+                "old_value": old_value,
+                "new_value": new_value
+            })
+
+    return changes
+
+def compare_timeline_fields(timeline_entry, dump_entry):
+    """ Compare only fields that belong to the ProjectTimeline model """
+    changes = []
+    timeline_fields = [field.name for field in ProjectTimeline._meta.fields]
+
+    for field_name in timeline_fields:
+        if field_name in ["id", "project"] or not hasattr(dump_entry, field_name):
+            continue
+
+        old_value = getattr(timeline_entry, field_name, None)
+        new_value = getattr(dump_entry, field_name, None)
+
+        old_value = str(old_value) if old_value is not None else "-"
+        new_value = str(new_value) if new_value is not None else "-"
+
+        if old_value != new_value:
+            changes.append({
+                "field_name": field_name,
+                "old_value": old_value,
+                "new_value": new_value
+            })
+
+    return changes
+
+def merge_selected_data(request):
+    if request.method == "POST":
+        selected_entries = request.POST.getlist("selected_entries")
+
+        if not selected_entries:
+            messages.warning(request, "No entries selected for merging.")
+            return redirect("preview_merge_data")
+
+        all_entries = DumpRawData.objects.all()
+        process_all = "ALL" in selected_entries  # Check if 'ALL' is selected
+
+        for dump_entry in (all_entries if process_all else [DumpRawData.objects.get(project_number=entry.split("_")[0]) for entry in selected_entries]):
+            project_number = dump_entry.project_number
+            main_entry, created = Project.objects.get_or_create(project_number=project_number)
+
+            # Ensure ForeignKey instances exist
+            year_instance = Year.objects.get_or_create(year=dump_entry.year)[0] if dump_entry.year else None
+            office_instance = Office.objects.get_or_create(office=dump_entry.office)[0] if dump_entry.office else None
+            category_instance = Category.objects.get_or_create(category=dump_entry.category)[0] if dump_entry.category else None
+            municipality_instance = Municipality.objects.get_or_create(municipality=dump_entry.municipality)[0] if dump_entry.municipality else None
+            fund_instance = FundSource.objects.get_or_create(fund=dump_entry.fund)[0] if dump_entry.fund else None
+            remarks_instance = Remark.objects.get_or_create(remark=dump_entry.remarks)[0] if dump_entry.remarks else None
+
+            for field_name in Project._meta.fields:
+                if field_name.name in ["id", "updated_at", "sub_category"]:
+                    continue
+
+                old_value = getattr(main_entry, field_name.name, None)
+                new_value = getattr(dump_entry, field_name.name, None)
+
+                if field_name.name == "year":
+                    new_value = year_instance
+                elif field_name.name == "category":
+                    new_value = category_instance
+                elif field_name.name == "municipality":
+                    new_value = municipality_instance
+                elif field_name.name == "office":
+                    new_value = office_instance
+                elif field_name.name == "fund":
+                    new_value = fund_instance
+
+                if old_value != new_value:
+                    UpdateHistory.objects.create(
+                        project=main_entry,
+                        field_name=field_name.name,
+                        old_value=old_value,
+                        new_value=new_value,
+                        updated_by=request.user
+                    )
+                    setattr(main_entry, field_name.name, new_value)
+            main_entry.save()
+
+            contract_entry, _ = Contract.objects.get_or_create(project=main_entry)
+            for field_name in Contract._meta.fields:
+                if field_name.name in ["id", "project"]:
+                    continue
+
+                old_value = getattr(contract_entry, field_name.name, None)
+                new_value = getattr(dump_entry, field_name.name, None)
+
+                if field_name.name == "remarks":
+                    new_value = remarks_instance
+
+                if old_value != new_value:
+                    UpdateHistory.objects.create(
+                        project=main_entry,
+                        field_name=f"Contract: {field_name.name}",
+                        old_value=old_value,
+                        new_value=new_value,
+                        updated_by=request.user
+                    )
+                    setattr(contract_entry, field_name.name, new_value)
+            contract_entry.save()
+
+            timeline_entry, _ = ProjectTimeline.objects.get_or_create(project=main_entry)
+            for field_name in ProjectTimeline._meta.fields:
+                if field_name.name in ["id", "project"]:
+                    continue
+
+                old_value = getattr(timeline_entry, field_name.name, None)
+                new_value = getattr(dump_entry, field_name.name, None)
+
+                if old_value != new_value:
+                    UpdateHistory.objects.create(
+                        project=main_entry,
+                        field_name=f"Timeline: {field_name.name}",
+                        old_value=old_value,
+                        new_value=new_value,
+                        updated_by=request.user
+                    )
+                    setattr(timeline_entry, field_name.name, new_value)
+            timeline_entry.save()
+
+        with connection.cursor() as cursor:
+            cursor.execute("TRUNCATE TABLE home_dumprawdata;")
+
+        messages.success(request, "Selected data merged successfully!")
+        return redirect("update-history")
+
+    return redirect("preview_merge_data")
+
 

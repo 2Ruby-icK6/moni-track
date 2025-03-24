@@ -9,6 +9,7 @@ from apps.home import views
 #------------- Views -------------#
 from apps.home.views import ProjectListView, ProjectTableView, ProjectFlexTableView
 from apps.home.views import DonwloadTablePreview, UpdateDataView, UpdateHistoryView, UpdateHistoryActionView
+from apps.home.views import ImportAndPreviewView, discard_data, preview_merge_data, merge_selected_data
 
 urlpatterns = [
 
@@ -26,6 +27,13 @@ urlpatterns = [
 
     path("history/", UpdateHistoryView.as_view(), name="update-history"),
     path("history/action/<int:history_id>/<str:action>/", UpdateHistoryActionView.as_view(), name="update-history-action"),
+
+    path('import/', ImportAndPreviewView.as_view(), name='import_file'),
+    path("discard/", discard_data, name="discard_data"),
+
+    path("merge-preview/", preview_merge_data, name="merge_preview"),
+    path("merge-selected/", merge_selected_data, name="merge_selected_data"),
+
 
     # Matches any html file
     re_path(r'^.*\.*', views.pages, name='pages'),

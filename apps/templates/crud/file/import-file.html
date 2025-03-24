@@ -1,0 +1,297 @@
+{% extends 'layouts/base.html' %}
+
+{% load custom_filters %}
+
+{% block title %} Import File {% endblock title %}
+
+{% block content %}
+<div class="container-fluid py-3">
+  <div class="card">
+    <div class="card-header pb-0">
+      <div class="d-flex justify-content-between">
+        <h6 class="card-title">Import File</h6>
+      </div>
+    </div>
+    <div class="card-body pt-0">
+        <form id="upload-form" method="POST" enctype="multipart/form-data" class="custom-form">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label for="fileUpload" class="form-label">Choose an Excel file:</label>
+                <input type="file" id="fileUpload" name="file" class="form-control bg-white" accept=".xls, .xlsx">
+                <small class="text-muted">Only .xlsx and .xls files are allowed.</small>
+            </div>
+
+            <!-- Progress Bar -->
+            <div id="progress-container" class="progress-container mb-3" style="display: none;">
+                <label for="fileProgress" class="form-label">Upload Progress:</label>
+                <div class="progress">
+                    <div id="fileProgress" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-sm bg-gradient-success d-flex gap-1 align-items-center justify-content-center">
+                <i class="ni ni-books me-sm-1"></i>
+                <span class="d-sm-inline d-none">Upload</span></button>
+
+            <!-- Success Message -->
+            {% if messages %}
+            <div class="alert alert-success mt-3">
+                {% for message in messages %}
+                {{ message }}
+                {% endfor %}
+            </div>
+            {% endif %}
+        </form>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid mt-0">
+  <div class="card">
+    <div class="card-header d-flex justify-content-between mb-0">
+        <h6 class="card-title mb-0">Preview Imported Data</h6>
+        <div class="d-flex gap-3">
+            <!-- Column Selector Dropdown -->
+            <div class="dropdown">
+                <button class="btn btn-sm bg-gradient-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    Select Columns
+                </button>
+                <div class="dropdown-menu p-3" id="columnSelector" style="max-height: 300px; overflow-y: auto;">
+                    <div class="d-flex justify-content-between mb-2">
+                    <button class="btn btn-sm btn-success" id="selectAll">Select All</button>
+                    <button class="btn btn-sm btn-danger" id="unselectAll">Unselect All</button>
+                    </div>
+                    <hr class="my-1">
+                    {% for column in column_list %}
+                    <div class="form-check dropdown-item">
+                        <label class="form-check-label text-black fw-semibold" for="col-{{ column }}">
+                        <input class="form-check-input column-toggle" type="checkbox" value="{{ column }}" id="col-{{ column }}" checked>
+                        <span class="form-check-sign"></span>
+                        {{ column_display_names|get_item:column|default:column }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+                </div>
+
+                <!-- Merge data -->
+                <form method="POST" action="{% url 'merge_preview' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm bg-gradient-success">Merge Data</button>
+                </form>
+
+            <a href="#" class="btn btn-sm bg-gradient-danger d-flex gap-1 align-items-center justify-content-center" id="discardDataBtn">
+                <i class="fas fa-ban me-sm-1"></i>
+                <span class="d-sm-inline d-none">Discard</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="card-body mt-0">
+        <div class="d-flex align-items-center">
+            <h5 class="card-title">
+                <span class="badge bg-success text-white">Imported Row Results: {{ total_results }}</span>
+            </h5>
+        </div>
+        <div class="table-responsive" style="overflow-y: auto; font-size: 12px;">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        {% for column in column_list %}
+                            <th scope="col" class="fs-6 fw-semibold" data-column="{{ column }}">
+                            {{ column_display_names|get_item:column|default:column }}
+                            </th>                
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in page_obj %}
+                    <tr>
+                        {% for column in column_list %}
+                            <td class="column-data {% if column == 'project_cost' or column == 'contract_cost'%}currency-value{% endif %} 
+                            {% if column == 'quarter' %}percentage-value{% endif %}" 
+                            data-column="{{ column }}">{{ entry|getattr_filter:column }}</td>
+                        {% endfor %}
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center">No data imported yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% include "includes/pagination.html" %}
+
+    </div>
+  </div>
+</div>
+
+
+
+{% endblock content %}
+
+<!-- Specific JS goes HERE --> 
+{% block javascripts %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const fileInput = document.getElementById('fileUpload');
+    const fileNameDisplay = document.getElementById('file-name');
+    const progressContainer = document.getElementById('progress-container');
+    const progressBar = document.getElementById('fileProgress');
+    const uploadForm = document.getElementById('upload-form');
+
+    // Handle file selection
+    fileInput.addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (file) {
+            const fileName = file.name;
+            const fileSize = file.size / 1024 / 1024; // Convert bytes to MB
+
+            // Validate file type
+            const allowedExtensions = ['xls', 'xlsx'];
+            const fileExtension = fileName.split('.').pop().toLowerCase();
+            if (!allowedExtensions.includes(fileExtension)) {
+                Swal.fire("Invalid file type!", "Please upload an Excel file (.xls or .xlsx).", "error");
+                fileInput.value = ''; // Reset file input
+                return;
+            }
+
+            // Validate file size (max 5MB)
+            if (fileSize > 5) {
+                Swal.fire("File is too large!", "Maximum allowed size is 5MB.", "error");
+                fileInput.value = ''; // Reset file input
+                return;
+            }
+        }
+    });
+
+    // Handle form submission and show progress bar
+    uploadForm.addEventListener('submit', function (e) {
+        e.preventDefault(); // Prevent default form submission
+
+        // Ensure file is selected before proceeding
+        if (!fileInput.files.length) {
+            Swal.fire("No file selected!", "Please choose a file to upload.", "warning");
+            return;
+        }
+
+        progressContainer.style.display = 'block';
+        progressBar.style.width = '0%';
+        let progress = 0;
+
+        const interval = setInterval(function () {
+            if (progress >= 100) {
+                clearInterval(interval);
+                progressBar.style.width = '100%';
+
+                // Submit form after progress completes
+                setTimeout(() => uploadForm.submit(), 300);
+            } else {
+                progress += 10;
+                progressBar.style.width = progress + '%';
+            }
+        }, 500);
+    });
+
+    // Column Selector Logic with Local Storage Persistence
+    const columnToggles = document.querySelectorAll(".column-toggle");
+    const selectAllBtn = document.getElementById("selectAll");
+    const unselectAllBtn = document.getElementById("unselectAll");
+    const storedColumns = JSON.parse(localStorage.getItem("selectedColumns_preview")) || {};
+
+    columnToggles.forEach(toggle => {
+        const columnValue = toggle.value;
+        const tableCells = document.querySelectorAll(`td[data-column="${columnValue}"], th[data-column="${columnValue}"]`);
+
+        // Restore saved setting if available
+        if (storedColumns[columnValue] === false) {
+            toggle.checked = false;
+            tableCells.forEach(cell => cell.style.display = "none");
+        }
+
+        toggle.addEventListener("change", function () {
+            tableCells.forEach(cell => cell.style.display = toggle.checked ? "" : "none");
+            storedColumns[columnValue] = toggle.checked;
+            localStorage.setItem("selectedColumns_preview", JSON.stringify(storedColumns));
+        });
+    });
+
+    // Select All Columns
+    selectAllBtn.addEventListener("click", function () {
+        columnToggles.forEach(toggle => {
+            toggle.checked = true;
+            const tableCells = document.querySelectorAll(`td[data-column="${toggle.value}"], th[data-column="${toggle.value}"]`);
+            tableCells.forEach(cell => cell.style.display = "");
+            storedColumns[toggle.value] = true;
+        });
+        localStorage.setItem("selectedColumns_preview", JSON.stringify(storedColumns));
+    });
+
+    // Unselect All Columns
+    unselectAllBtn.addEventListener("click", function () {
+        columnToggles.forEach(toggle => {
+            toggle.checked = false;
+            const tableCells = document.querySelectorAll(`td[data-column="${toggle.value}"], th[data-column="${toggle.value}"]`);
+            tableCells.forEach(cell => cell.style.display = "none");
+            storedColumns[toggle.value] = false;
+        });
+        localStorage.setItem("selectedColumns_preview", JSON.stringify(storedColumns));
+    });
+
+    // Apply saved column settings on page load
+    columnToggles.forEach(toggle => {
+        const tableCells = document.querySelectorAll(`td[data-column="${toggle.value}"], th[data-column="${toggle.value}"]`);
+        tableCells.forEach(cell => cell.style.display = toggle.checked ? "" : "none");
+    });
+
+    // Prevent dropdown from closing when clicking inside
+    document.getElementById("columnSelector").addEventListener("click", function (event) {
+        event.stopPropagation();
+    });
+
+    // Format quarter values as percentages
+    document.querySelectorAll(".percentage-value").forEach(el => {
+        let value = parseFloat(el.innerText.trim());
+        if (!isNaN(value)) {
+            el.innerText = (value * 100).toFixed(2) + "%";
+        } else {
+            el.innerText = "-----";
+        }
+    });
+
+    // Format project cost as currency
+    document.querySelectorAll(".currency-value").forEach(el => {
+        let value = parseFloat(el.innerText.trim());
+        if (!isNaN(value)) {
+            el.innerText = "P " + value.toLocaleString("en-US");
+        } else {
+            el.innerText = "-----";
+        }
+    });
+
+    // Discard Data Confirmation
+    document.getElementById("discardDataBtn").addEventListener("click", function (event) {
+        event.preventDefault(); // Prevent default link behavior
+
+        Swal.fire({
+            title: "Are you sure?",
+            text: "This action will delete all imported data and cannot be undone.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Yes, discard it!",
+            cancelButtonText: "Cancel"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = "{% url 'discard_data' %}"; // Redirect to discard view
+            }
+        });
+    });
+});
+</script>
+{% endblock javascripts %}

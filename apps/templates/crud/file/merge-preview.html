@@ -1,0 +1,138 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %} Merge Preview {% endblock title %}
+
+{% block content %}
+
+<div class="container-fluid mt-4">
+  <div class="card">
+    <div class="card-header pb-0">
+      <div class="d-flex align-items-center">
+        <p class="mb-0">Merge Preview</p>
+        <a href="{% url 'import_file' %}" class="btn btn-sm bg-gradient-danger ms-auto d-flex gap-1 align-items-center justify-content-center">
+          <i class="ni ni-curved-next me-sm-1"></i>
+          <span class="d-sm-inline d-none">Back to Import</span></a>
+      </div>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{% url 'merge_selected_data' %}">
+            {% csrf_token %}
+        <div class="table-responsive p-0">
+            <table class="table align-items-center mb-0">
+            <thead>
+                <tr>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">No.</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Project Name</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Field</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Old Value</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">New Value</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for change in changes %}
+                    {% for field in change.fields %}
+                <tr>
+                <td>
+                    <p class="text-xs text-wrap font-weight-bold mb-0">{{ change.project_number }}</p>
+                </td>
+                <td>
+                    <span class="text-secondary text-wrap text-xs font-weight-bold">{{ change.project_name }}</span>
+                </td>
+                <td>
+                    <span class="text-secondary text-wrap text-xs font-weight-bold">{{ field.field_name }}</span>
+                </td>
+                <td>
+                    <span class="text-secondary text-wrap text-xs font-weight-bold">{{ field.old_value|default:"-" }}</span>
+                </td>
+                <td>
+                    <span class="text-secondary text-wrap  text-xs font-weight-bold">{{ field.new_value }}</span>
+                </td>
+                <td class="align-middle">
+                    <button type="button" class="btn btn-success select-btn" data-value="{{ change.project_number }}_{{ field.field_name }}">
+                        Select
+                    </button>
+                </td>
+                </tr>
+                    {% endfor %}
+                {% endfor %}
+            </tbody>
+            </table>
+
+            <input type="hidden" name="selected_entries" id="selected-entries">
+
+            <button type="submit" class="btn btn-success mt-3">Merge Selected</button>
+            <a href="{% url 'import_file' %}" class="btn btn-secondary mt-3">Cancel</a>
+
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock content %}
+
+<!-- Specific JS goes HERE --> 
+{% block javascripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const toggleAllBtn = document.getElementById("toggle-all");
+        const selectedEntriesInput = document.getElementById("selected-entries");
+        const selectedEntries = new Set();
+        let allSelected = false; // Track if all rows are selected
+
+        function updateSelectedEntries() {
+            selectedEntriesInput.value = Array.from(selectedEntries).join(",");
+        }
+
+        document.querySelectorAll(".select-btn").forEach(button => {
+            button.addEventListener("click", function() {
+                const value = this.dataset.value;
+                const row = this.closest("tr");
+
+                if (selectedEntries.has(value)) {
+                    selectedEntries.delete(value);
+                    this.textContent = "Select";
+                    this.classList.replace("btn-danger", "btn-success");
+                    row.classList.remove("table-success");
+                } else {
+                    selectedEntries.add(value);
+                    this.textContent = "Unselect";
+                    this.classList.replace("btn-success", "btn-danger");
+                    row.classList.add("table-success");
+                }
+
+                updateSelectedEntries();
+            });
+        });
+
+        toggleAllBtn.addEventListener("click", function() {
+            const buttons = document.querySelectorAll(".select-btn");
+            allSelected = !allSelected; // Toggle selection state
+
+            buttons.forEach(button => {
+                const value = button.dataset.value;
+                const row = button.closest("tr");
+
+                if (allSelected) {
+                    selectedEntries.add(value);
+                    button.textContent = "Unselect";
+                    button.classList.replace("btn-success", "btn-danger");
+                    row.classList.add("table-success");
+                } else {
+                    selectedEntries.delete(value);
+                    button.textContent = "Select";
+                    button.classList.replace("btn-danger", "btn-success");
+                    row.classList.remove("table-success");
+                }
+            });
+
+            toggleAllBtn.textContent = allSelected ? "Unselect All" : "Select All";
+            toggleAllBtn.classList.toggle("btn-danger", allSelected);
+            toggleAllBtn.classList.toggle("btn-success", !allSelected);
+            
+            updateSelectedEntries();
+        });
+    });
+</script>
+{% endblock javascripts %}
