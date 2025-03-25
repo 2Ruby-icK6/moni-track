@@ -17,13 +17,16 @@ from django.core.paginator import Paginator
 from django.conf import settings
 from django.db import connection, models
 from django.forms import modelformset_factory
+from django.utils.dateparse import parse_date
 
 from django.views import View
 from django.views.generic.list import ListView
 
+import openpyxl
 import os
 import re
 import json
+from datetime import datetime
 
 from .utils import utils
 
@@ -290,30 +293,186 @@ class ProjectFlexTableView(ListView):
 #------------- Download Table Preview -------------#
 class DonwloadTablePreview(ListView):
     model = Project
-    template_name = 'file/download-file.html'
-    context_object_name = 'projects'
+    template_name = "file/download-file.html"
+    context_object_name = "projects"
     paginate_by = 10
 
     def get_queryset(self):
-        queryset = Project.objects.select_related(
-            "timeline",   # Fetch related ProjectTimeline
-            "contract"    # Fetch related Contract
-        ).all()
+        queryset = Project.objects.select_related("timeline", "contract", "contract__remarks").annotate(
+            # Project Timeline
+            cd=F("timeline__cd"),
+            ntp_date=F("timeline__ntp_date"),
+            extension=F("timeline__extension"),
+            target=F("timeline__target_completion_date"),
+            revised=F("timeline__revised_completion_date"),
+            date_completed=F("timeline__date_completed"),
+            total_cost=F("timeline__total_cost_incurred_to_date"),
+            reason=F("timeline__reason"),
+
+            # Contract 
+            project_cost=F("contract__project_cost"),
+            contract_cost=F("contract__contract_cost"),
+            procurement=F("contract__procurement"),
+            quarter=F("contract__quarter"),
+            remarks=F("contract__remarks__remark"),
+            contractor=F("contract__project_contractor"),
+            tin_number=F("contract__tin_number"),
+        ).order_by("project_number")
+
+        # Get filter parameters from request
+        category = self.request.GET.get("category", "")
+        sub_category = self.request.GET.get("sub_category", "")
+        municipality = self.request.GET.get("municipality", "")
+        start_year = self.request.GET.get("start_year", "")
+        end_year = self.request.GET.get("end_year", "")
+        fund = self.request.GET.get("fund", "")
+        remarks = self.request.GET.get("remarks", "")
+
+        # Apply filters
+        if category:
+            queryset = queryset.filter(category__category=category)
+        if sub_category:
+            queryset = queryset.filter(sub_category__sub_category=sub_category)
+        if municipality:
+            queryset = queryset.filter(municipality__municipality=municipality)
+        if start_year and end_year:
+            queryset = queryset.filter(year__year__range=(start_year, end_year))
+        if fund:
+            queryset = queryset.filter(fund__fund__icontains=fund)
+        if remarks:
+            queryset = queryset.filter(contract__remarks__remark=remarks)
 
         return queryset
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        context['category'] = Category.objects.values_list('category', flat=True).distinct().order_by('category')
-        context['fund'] = FundSource.objects.values_list('fund', flat=True).distinct().order_by('fund')
-        context['municipality'] = Municipality.objects.values_list('municipality', flat=True).distinct().order_by('municipality')
-        context['office'] = Office.objects.values_list('office', flat=True).distinct().order_by('office')
-        context['sub_category'] = SubCategory.objects.values_list('sub_category', flat=True).distinct().order_by('sub_category')
-        context['year'] = Year.objects.values_list('year', flat=True).distinct().order_by('year')
-        context['remark'] = Remark.objects.values_list('remark', flat=True).distinct().order_by('remark')
+        filtered_queryset = self.get_queryset()
+        context['total_results'] = filtered_queryset.count()
+        
+        column_display_names = {
+            "project_number": "NO",
+            "project_name": "Project Name",
+            "project_ID": "Project ID",
+            "category": "Category",
+            "sub_category": "Sub Category",
+            "project_description": "Project Description",
+            "location": "Location",
+            "municipality": "Municipality",
+            "office": "Implementing Office",
+            "year": "Project Year",
+            "fund": "Source of Fund",
+            "project_cost": "Project Cost",
+            "contract_cost": "Contract Cost",
+            "cd": "C D",
+            "ntp_date": "NTP Date",
+            "extension": "NO of Extension",
+            "target": "Target Completion Date",
+            "revised": "Revised Completion Date",
+            "date_completed": "Date Completed",
+            "quarter": "Quarter",
+            "total_cost": "Total Cost Incurred to Date",
+            "procurement": "Mode of Procurement",
+            "remarks": "General Remarks",
+            "contractor": "Project Contractor",
+            "tin_number": "Tin Number",
+            "reason": "Reason",
+        }
+
+        context.update({
+            "column_list": list(column_display_names.keys()),
+            "column_display_names": column_display_names,
+            "category": Category.objects.values_list("category", flat=True).order_by("category"),
+            "fund": FundSource.objects.values_list("fund", flat=True).order_by("fund"),
+            "municipality": Municipality.objects.values_list("municipality", flat=True).order_by("municipality"),
+            "office": Office.objects.values_list("office", flat=True).order_by("office"),
+            "sub_category": SubCategory.objects.values_list("sub_category", flat=True).order_by("sub_category"),
+            "year": Year.objects.values_list("year", flat=True).order_by("year"),
+            "remark": Remark.objects.values_list("remark", flat=True).order_by("remark"),
+            "selected_filters": self.request.GET,
+        })
 
         return context
+
+def export_data(request):
+    """Exports Project, Contract, and Timeline data into a pre-formatted Excel file with filters"""
+
+    # Get filter parameters from request
+    category_filter = request.GET.get('category', None)
+    subcategory_filter = request.GET.get('sub_category', None)
+    municipality_filter = request.GET.get('municipality', None)
+    fund_filter = request.GET.get('fund', None)
+    remarks_filter = request.GET.get('remarks', None)
+    start_year_filter = request.GET.get('start_year', None)
+    end_year_filter = request.GET.get('end_year', None)
+
+    # Start with all projects
+    projects = Project.objects.all()
+
+    # Apply filters
+    if category_filter:
+        projects = projects.filter(category__category=category_filter)
+    if subcategory_filter:
+        projects = projects.filter(sub_category__sub_category=subcategory_filter)
+    if municipality_filter:
+        projects = projects.filter(municipality__municipality=municipality_filter)
+    if fund_filter:
+        projects = projects.filter(fund__fund=fund_filter)
+    if remarks_filter:
+        projects = projects.filter(contract__remarks__remark=remarks_filter)
+    if start_year_filter and end_year_filter:
+        projects = projects.filter(year__year__range=(start_year_filter, end_year_filter))
+
+    # Load the pre-formatted Excel template
+    template_path = os.path.join(settings.CORE_DIR, 'apps','static', 'templates', 'export_template.xlsx')  # Update path
+    workbook = openpyxl.load_workbook(template_path)
+    sheet = workbook.active  # Modify this if needed
+
+    start_row = 4  # Ensure this matches where data should start in the template
+
+    for project in projects:
+        contract = Contract.objects.filter(project=project).first()
+        timeline = ProjectTimeline.objects.filter(project=project).first()
+
+        # Write data to the correct columns
+        sheet[f"A{start_row}"] = project.project_number  # NO.
+        sheet[f"B{start_row}"] = project.project_name  # PROJECT NAME
+        sheet[f"C{start_row}"] = project.project_ID  # PROJECT ID
+        sheet[f"D{start_row}"] = project.category.category if project.category else None  # PPDO CATEGORY
+        sheet[f"E{start_row}"] = project.sub_category.sub_category if project.sub_category else None  # SUB CATEGORY
+        sheet[f"F{start_row}"] = project.project_description  # PROJECT DESCRIPTION
+        sheet[f"G{start_row}"] = project.location  # LOCATION
+        sheet[f"H{start_row}"] = project.municipality.municipality if project.municipality else None  # MUNICIPALITY
+        sheet[f"I{start_row}"] = project.office.office if project.office else None  # IMPLEMENTING OFFICE
+        sheet[f"J{start_row}"] = project.year.year if project.year else None  # YEAR
+        sheet[f"K{start_row}"] = project.fund.fund if project.fund else None  # SOURCE OF FUND
+        sheet[f"L{start_row}"] = contract.project_cost if contract else None  # PROJECT COST
+        sheet[f"M{start_row}"] = contract.contract_cost if contract else None  # CONTRACT COST
+        sheet[f"N{start_row}"] = timeline.cd if timeline else None  # C.D
+        sheet[f"O{start_row}"] = timeline.ntp_date.strftime('%Y-%m-%d') if timeline and timeline.ntp_date else None  # NTP DATE
+        sheet[f"P{start_row}"] = timeline.extension if timeline else None  # NO. OF EXTENSION
+        sheet[f"Q{start_row}"] = utils.format_date_or_text(timeline.target_completion_date) if timeline else None  # TARGET COMPLETION DATE
+        sheet[f"R{start_row}"] = utils.format_date_or_text(timeline.revised_completion_date) if timeline else None  # REVISED COMPLETION DATE
+        sheet[f"S{start_row}"] = utils.format_date_or_text(timeline.date_completed) if timeline else None  # DATE COMPLETED
+        sheet[f"T{start_row}"] = contract.quarter if contract else None  # AS OF MONTH YEAR
+        sheet[f"U{start_row}"] = timeline.total_cost_incurred_to_date if timeline else None  # TOTAL COST INCURRED TO DATE
+        sheet[f"V{start_row}"] = contract.procurement if contract else None  # MODE OF PROCUREMENT
+        sheet[f"W{start_row}"] = contract.remarks.remark if contract and contract.remarks else None  # GENERAL REMARKS
+        sheet[f"X{start_row}"] = contract.project_contractor if contract else None  # PROJECT CONTRACTOR
+        sheet[f"Y{start_row}"] = contract.tin_number if contract else None  # TIN NUMBER
+        sheet[f"Z{start_row}"] = timeline.reason if timeline else None  # REASON
+
+        start_row += 1  # Move to the next row
+
+    # Create response for downloading the file
+    response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    now = datetime.now().strftime("%Y-%m-%d %I:%M %p")  # Format: YYYY-MM-DD HH:MM AM/PM
+    response["Content-Disposition"] = f'attachment; filename="Exported_File{now}.xlsx"'
+
+    # Save workbook to response
+    workbook.save(response)
+
+    return response
 
 #------------- Udpate Project -------------#
 # Create inline formsets for ProjectTimeline and Contract

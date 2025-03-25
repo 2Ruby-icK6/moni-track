@@ -4,6 +4,8 @@ Copyright (c) 2019 - present AppSeed.us
 """
 
 from django.contrib import admin
+from import_export.admin import ExportMixin
+from import_export import resources
 
 # Register your models here.
 from .models import (
@@ -43,22 +45,40 @@ class OfficeAdmin(admin.ModelAdmin):
     list_display = ('id', 'office')
     search_fields = ('office',)
 
+# ===================== Export =========================== #
+# Create export resource classes
+class ProjectResource(resources.ModelResource):
+    class Meta:
+        model = Project
+
+class ContractResource(resources.ModelResource):
+    class Meta:
+        model = Contract
+
+class ProjectTimelineResource(resources.ModelResource):
+    class Meta:
+        model = ProjectTimeline
+
 # ===================== Main Tables ===================== #
 
 @admin.register(Project)
-class ProjectAdmin(admin.ModelAdmin):
+class ProjectAdmin(ExportMixin, admin.ModelAdmin):
     list_display = ('project_number', 'project_name', 'category', 'municipality', 'year', 'office', 'fund')
     search_fields = ('project_number', 'project_name', 'project_ID')
     list_filter = ('category', 'municipality', 'year', 'office', 'fund')
+    resource_class = ProjectResource
+
 
 @admin.register(Contract)
-class ContractAdmin(admin.ModelAdmin):
+class ContractAdmin(ExportMixin, admin.ModelAdmin):
     list_display = ('project', 'project_cost', 'contract_cost', 'project_contractor', 'tin_number', 'remarks')
     search_fields = ('project__project_name', 'project_contractor')
     list_filter = ('project_contractor', 'tin_number','remarks')
+    resource_class = ContractResource
 
 @admin.register(ProjectTimeline)
-class ProjectTimelineAdmin(admin.ModelAdmin):
+class ProjectTimelineAdmin(ExportMixin, admin.ModelAdmin):
     list_display = ('project', 'ntp_date', 'target_completion_date', 'revised_completion_date', 'date_completed')
     search_fields = ('project__project_name',)
     list_filter = ('ntp_date', 'target_completion_date', 'date_completed')
+    resource_class = ProjectTimelineResource

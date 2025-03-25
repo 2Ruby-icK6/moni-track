@@ -2,6 +2,7 @@ import pandas as pd
 import json
 import re
 from django.http import Http404
+from datetime import date
 
 def excel_to_json(input_excel, output_json, required_columns=None):
     try:
@@ -54,3 +55,11 @@ def excel_to_json(input_excel, output_json, required_columns=None):
         raise Http404("Failed to generate valid JSON output.")
     except Exception as e:
         raise Http404(f"Unexpected error: {e}")
+
+def format_date_or_text(value):
+    """Formats a value as a date (if it's a date object) or returns it as text."""
+    if value:  # Ensure the value is not empty
+        if isinstance(value, date):  # Use date instead of datetime.date
+            return value.strftime('%Y-%m-%d')  # Format the date object
+        return str(value)  # Convert other types to string
+    return None  # Keep it empty instead of "N/A" for Excel formatting
