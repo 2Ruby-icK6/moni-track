@@ -293,9 +293,9 @@ class ProjectFlexTableView(ListView):
 #------------- Download Table Preview -------------#
 class DonwloadTablePreview(ListView):
     model = Project
-    template_name = "file/download-file.html"
+    template_name = "crud/file/download-file.html"
     context_object_name = "projects"
-    paginate_by = 10
+    paginate_by = 15
 
     def get_queryset(self):
         queryset = Project.objects.select_related("timeline", "contract", "contract__remarks").annotate(
@@ -837,6 +837,8 @@ def discard_data(request):
 def preview_merge_data(request):
     dump_data = DumpRawData.objects.all()
     changes = []
+    new_projects = []
+    user = request.user  # Get the logged-in user
 
     # Foreign key mappings
     category_mapping = {c.category: c for c in Category.objects.all()}
@@ -844,26 +846,111 @@ def preview_merge_data(request):
     year_mapping = {y.year: y for y in Year.objects.all()}
     fund_mapping = {f.fund: f for f in FundSource.objects.all()}
     remark_mapping = {r.remark: r for r in Remark.objects.all()}
+    office_mapping = {o.office: o for o in Office.objects.all()}
 
     foreign_key_fields = {
         "category": category_mapping,
         "municipality": municipality_mapping,
         "fund": fund_mapping,
         "year": year_mapping,
+        "remark": remark_mapping,
+        "office": office_mapping,
     }
 
     for dump_entry in dump_data:
         try:
             main_entry = Project.objects.get(project_number=dump_entry.project_number)
+            exists = True
         except Project.DoesNotExist:
-            continue
+            # If project does not exist, create it
+            main_entry = Project.objects.create(
+                project_number=dump_entry.project_number,
+                project_name=dump_entry.project_name,
+                project_ID=dump_entry.project_ID,
+                category=category_mapping.get(dump_entry.category),
+                municipality=municipality_mapping.get(dump_entry.municipality),
+                office=office_mapping.get(dump_entry.office),
+                year=year_mapping.get(dump_entry.year),
+                fund=fund_mapping.get(dump_entry.fund),
+                project_description=dump_entry.project_description,
+                location=dump_entry.location,
+            )
+            exists = False
+
+            # Create a new Contract entry
+            contract_entry = Contract.objects.create(
+                project=main_entry,
+                project_cost=dump_entry.project_cost,
+                contract_cost=dump_entry.contract_cost,
+                remarks=remark_mapping.get(dump_entry.remarks),
+                quarter=dump_entry.quarter,
+                project_contractor=dump_entry.project_contractor,
+                tin_number=dump_entry.tin_number,
+                procurement=dump_entry.procurement,
+            )
+
+            # Create a new ProjectTimeline entry
+            timeline_entry = ProjectTimeline.objects.create(
+                project=main_entry,
+                cd=dump_entry.cd,
+                ntp_date=dump_entry.ntp_date,
+                extension=dump_entry.extension,
+                target_completion_date=dump_entry.target_completion_date,
+                revised_completion_date=dump_entry.revised_completion_date,
+                date_completed=dump_entry.date_completed,
+                reason=dump_entry.reason,
+                total_cost_incurred_to_date=dump_entry.total_cost_incured_to_date,
+            )
+
+            # Log new project in history
+            AddProjectHistory.objects.create(
+                created_by=user,
+                project_number=dump_entry.project_number,
+                project_name=dump_entry.project_name,
+                project_ID=dump_entry.project_ID,
+                category=dump_entry.category,
+                project_description=dump_entry.project_description,
+                location=dump_entry.location,
+                municipality=dump_entry.municipality,
+                office=dump_entry.office,
+                year=dump_entry.year,
+                fund=dump_entry.fund,
+                project_cost=dump_entry.project_cost,
+                contract_cost=dump_entry.contract_cost,
+                cd=dump_entry.cd,
+                ntp_date=dump_entry.ntp_date,
+                extension=dump_entry.extension,
+                target_completion_date=dump_entry.target_completion_date,
+                revised_completion_date=dump_entry.revised_completion_date,
+                date_completed=dump_entry.date_completed,
+                quarter=dump_entry.quarter,
+                total_cost_incured_to_date=dump_entry.total_cost_incured_to_date,
+                procurement=dump_entry.procurement,
+                remarks=dump_entry.remarks,
+                project_contractor=dump_entry.project_contractor,
+                tin_number=dump_entry.tin_number,
+                reason=dump_entry.reason,
+            )
+
+            # Track new projects
+            new_projects.append(main_entry.project_number)
 
         entry_changes = {
             "project_number": dump_entry.project_number,
             "project_name": dump_entry.project_name,
             "fields": [],
-            "exists": True,
+            "exists": exists,
         }
+
+        # If the project is new, mark all fields as new
+        if not exists:
+            entry_changes["fields"].append({
+                "field_name": "New Project",
+                "old_value": "-",
+                "new_value": "Added",
+            })
+            changes.append(entry_changes)  # Add new projects to changes
+            continue  # Skip field comparisons
 
         # Compare Project Fields
         project_changes = compare_project_fields(main_entry, dump_entry, foreign_key_fields)
@@ -888,7 +975,7 @@ def preview_merge_data(request):
         if entry_changes["fields"]:
             changes.append(entry_changes)
 
-    return render(request, "crud/file/merge-preview.html", {"changes": changes})
+    return render(request, "crud/file/merge-preview.html", {"changes": changes, "new_projects": new_projects})
 
 def compare_project_fields(main_entry, dump_entry, foreign_key_fields):
     """ Compare only fields that belong to the Project model, excluding 'sub_category' """
@@ -1133,7 +1220,7 @@ class CreateDataView(View):
                 extension = first_timeline.extension if hasattr(first_timeline, 'extension') else None
                 target_completion_date = first_timeline.target_completion_date if hasattr(first_timeline, 'target_completion_date') else None
                 revised_completion_date = first_timeline.revised_completion_date if hasattr(first_timeline, 'revised_completion_date') else None
-                total_cost_incured_to_date = first_timeline.total_cost_incured_to_date if hasattr(first_timeline, 'total_cost_incured_to_date') else None                
+                total_cost_incured_to_date = first_timeline.total_cost_incurred_to_date if hasattr(first_timeline, 'total_cost_incured_to_date') else None                
                 date_completed = first_timeline.date_completed if hasattr(first_timeline, 'date_completed') else None                
                 reason = first_timeline.reason if hasattr(first_timeline, 'reason') else None
             
