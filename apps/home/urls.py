@@ -10,7 +10,7 @@ from apps.home import views
 from apps.home.views import ProjectListView, ProjectTableView, ProjectFlexTableView
 from apps.home.views import DonwloadTablePreview, export_data, UpdateDataView, UpdateHistoryView, UpdateHistoryActionView
 from apps.home.views import ImportAndPreviewView, discard_data, preview_merge_data, merge_selected_data
-from apps.home.views import CreateDataView, AddHistoryView, DeleteHistoryView
+from apps.home.views import CreateDataView, AddHistoryView, DeleteHistoryView, FundTableView, FundDeleteView
 
 urlpatterns = [
 
@@ -39,6 +39,9 @@ urlpatterns = [
     path('create/', CreateDataView.as_view(), name='add_project'),
     path('create-history/', AddHistoryView.as_view(), name='add-history'),
     path('history/delete/<int:pk>/', DeleteHistoryView.as_view(), name='delete_history'),
+
+    path("funds/", FundTableView.as_view(), name="fund_table"),
+    path("funds/delete/", FundDeleteView.as_view(), name="fund_delete"),
 
 
     # Matches any html file

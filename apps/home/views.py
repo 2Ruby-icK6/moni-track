@@ -20,7 +20,7 @@ from django.forms import modelformset_factory
 from django.utils.dateparse import parse_date
 
 from django.views import View
-from django.views.generic.list import ListView
+from django.views.generic import ListView, FormView, DeleteView
 
 import openpyxl
 import os
@@ -40,7 +40,7 @@ from .models import UpdateHistory, AddProjectHistory
 
 #------------- Forms -------------#
 # Auth Form
-from apps.authentication.forms import UpdateForm, ProjectForm, ProjectTimelineForm, ContractForm, UploadFileForm
+from apps.authentication.forms import UpdateForm, ProjectForm, ProjectTimelineForm, ContractForm, UploadFileForm, FundSourceForm
 
 #------------- Login -------------#
 @login_required(login_url="/login/")
@@ -844,7 +844,7 @@ def preview_merge_data(request):
     category_mapping = {c.category: c for c in Category.objects.all()}
     municipality_mapping = {m.municipality: m for m in Municipality.objects.all()}
     year_mapping = {y.year: y for y in Year.objects.all()}
-    fund_mapping = {f.fund: f for f in FundSource.objects.all()}
+    fund_mapping = {f.fund: f for f in FundSource.objects.all()}  # Fund source mapping
     remark_mapping = {r.remark: r for r in Remark.objects.all()}
     office_mapping = {o.office: o for o in Office.objects.all()}
 
@@ -862,16 +862,24 @@ def preview_merge_data(request):
             main_entry = Project.objects.get(project_number=dump_entry.project_number)
             exists = True
         except Project.DoesNotExist:
-            # If project does not exist, create it
+            # Auto-create missing foreign keys before project creation
+            category = category_mapping.get(dump_entry.category)
+            municipality = municipality_mapping.get(dump_entry.municipality)
+            office = office_mapping.get(dump_entry.office)
+            year = year_mapping.get(dump_entry.year)
+            fund = utils.get_or_create_foreign_key(fund_mapping, FundSource, dump_entry.fund, "fund")  # Auto-create fund
+            remark = remark_mapping.get(dump_entry.remarks)
+
+            # Create new Project entry
             main_entry = Project.objects.create(
                 project_number=dump_entry.project_number,
                 project_name=dump_entry.project_name,
                 project_ID=dump_entry.project_ID,
-                category=category_mapping.get(dump_entry.category),
-                municipality=municipality_mapping.get(dump_entry.municipality),
-                office=office_mapping.get(dump_entry.office),
-                year=year_mapping.get(dump_entry.year),
-                fund=fund_mapping.get(dump_entry.fund),
+                category=category,
+                municipality=municipality,
+                office=office,
+                year=year,
+                fund=fund,  # Assign the possibly newly created fund
                 project_description=dump_entry.project_description,
                 location=dump_entry.location,
             )
@@ -882,7 +890,7 @@ def preview_merge_data(request):
                 project=main_entry,
                 project_cost=dump_entry.project_cost,
                 contract_cost=dump_entry.contract_cost,
-                remarks=remark_mapping.get(dump_entry.remarks),
+                remarks=remark,
                 quarter=dump_entry.quarter,
                 project_contractor=dump_entry.project_contractor,
                 tin_number=dump_entry.tin_number,
@@ -914,7 +922,7 @@ def preview_merge_data(request):
                 municipality=dump_entry.municipality,
                 office=dump_entry.office,
                 year=dump_entry.year,
-                fund=dump_entry.fund,
+                fund=dump_entry.fund,  # Store fund in history
                 project_cost=dump_entry.project_cost,
                 contract_cost=dump_entry.contract_cost,
                 cd=dump_entry.cd,
@@ -1347,3 +1355,47 @@ class DeleteHistoryView(View):
         """Resets the auto-increment value of a table."""
         with connection.cursor() as cursor:
             cursor.execute(f"ALTER TABLE {table_name} AUTO_INCREMENT = {start_value};")
+
+#------------- Fund Table -------------#
+class FundTableView(ListView, FormView):
+    model = FundSource
+    template_name = 'crud/fund/fund.html'
+    context_object_name = 'funds'
+    paginate_by = 25
+    form_class = FundSourceForm
+
+    def get_queryset(self):
+        queryset = FundSource.objects.all()
+        search_query = self.request.GET.get("search", "").strip()
+        if search_query:
+            queryset = queryset.filter(fund__icontains=search_query)
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form"] = self.get_form()
+        context["search_query"] = self.request.GET.get("search", "")
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        if form.is_valid():
+            fund = form.save()
+            messages.success(request, f"Fund '{fund.fund}' added successfully!")
+            return redirect("fund_table")
+        else:
+            messages.error(request, "Error adding fund. Please check the input.")
+            return self.get(request, *args, **kwargs)
+
+class FundDeleteView(View):
+    """Handles deleting a fund via AJAX"""
+    def post(self, request, *args, **kwargs):
+        try:
+            fund_id = request.POST.get("fund_id")
+            fund = FundSource.objects.get(id=fund_id)
+            fund_name = fund.fund
+            fund.delete()
+            return JsonResponse({"success": True, "message": f"Fund '{fund_name}' deleted successfully!"})
+        except FundSource.DoesNotExist:
+            return JsonResponse({"success": False, "message": "Fund not found."})
+

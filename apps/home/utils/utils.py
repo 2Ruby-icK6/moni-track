@@ -63,3 +63,11 @@ def format_date_or_text(value):
             return value.strftime('%Y-%m-%d')  # Format the date object
         return str(value)  # Convert other types to string
     return None  # Keep it empty instead of "N/A" for Excel formatting
+
+def get_or_create_foreign_key(mapping, model, value, field_name):
+    """Helper function to get or create a foreign key object."""
+    if value not in mapping:
+        # Create new entry in the model if it doesn't exist
+        obj, created = model.objects.get_or_create(**{field_name: value})
+        mapping[value] = obj  # Update mapping with the newly created object
+    return mapping[value]

@@ -120,6 +120,7 @@
                   <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Project Name</th>
                   <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Project ID</th>
                   <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Project Description</th>
+                  <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Fund Source</th>
                   <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Location</th>
                   <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Municipality</th>
                   <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Office</th>
@@ -141,6 +142,9 @@
                   </td>
                   <td>
                     <p class="text-wrap text-xs font-weight-bold mb-0">{{ project.project_description }}</p>
+                  </td>
+                  <td>
+                    <p class="text-xs font-weight-bold mb-0">{{ project.fund.fund }}</p>
                   </td>
                   <td>
                     <p class="text-secondary text-xs font-weight-bold mb-0">{{ project.location }}</p>

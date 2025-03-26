@@ -32,7 +32,6 @@ class LoginForm(forms.Form):
             }
         ))
 
-
 class SignUpForm(UserCreationForm):
     username = forms.CharField(
         widget=forms.TextInput(
@@ -107,6 +106,7 @@ class UpdateForm(forms.ModelForm):
 
         return cleaned_data
 
+# ============================= Form Table =============================================
 class ProjectForm(forms.ModelForm):
     class Meta:
         model = Project
@@ -132,7 +132,6 @@ class ProjectForm(forms.ModelForm):
                 cleaned_data[field] = None  # Convert empty string to None
 
         return cleaned_data
-
 
 class ProjectTimelineForm(forms.ModelForm):
     id = forms.IntegerField(required=False, widget=forms.HiddenInput())
@@ -204,8 +203,14 @@ class ContractForm(forms.ModelForm):
                 cleaned_data[field] = None
 
         return cleaned_data
-    
 
+class FundSourceForm(forms.ModelForm):
+    class Meta:
+            model = FundSource
+            fields = '__all__' 
+            widgets = {
+                'fund': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter New Fund'})
+            }
 # ============================= Dump table Storage =============================================
 class UploadFileForm(forms.Form):
     file = forms.FileField()
