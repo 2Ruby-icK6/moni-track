@@ -39,14 +39,12 @@ class Year(models.Model):
     def __str__(self):
         return str(self.year)
 
-
 class Municipality(models.Model):
     id = models.AutoField(primary_key=True, null=False)
     municipality = models.CharField(max_length=255, null=False)
 
     def __str__(self):
         return self.municipality
-
 
 class Remark(models.Model):
     id = models.AutoField(primary_key=True)

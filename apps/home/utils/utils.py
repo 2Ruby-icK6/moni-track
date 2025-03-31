@@ -4,6 +4,11 @@ import re
 from django.http import Http404
 from datetime import date
 
+import pandas as pd
+import json
+import re
+from django.http import Http404
+
 def excel_to_json(input_excel, output_json, required_columns=None):
     try:
         df = pd.read_excel(input_excel, dtype=str, skiprows=3)
@@ -17,13 +22,14 @@ def excel_to_json(input_excel, output_json, required_columns=None):
         def clean_value(value):
             if isinstance(value, str):
                 value = value.strip()
-                return None if value == "" else value
+                return None if value.upper() in ("NULL", "NONE", "") else value
             return value
 
         def clean_numeric(value):
             if isinstance(value, str):
-                value = re.sub(r"\.{2,}", ".", value)  # Remove multiple dots
-                return value if re.match(r"^\d+(\.\d+)?$", value) else value
+                clean_value = re.sub(r",(?=\d{3}(\D|$))", "", value)  # Remove commas only in numeric values
+                clean_value = re.sub(r"\.{2,}", ".", clean_value)  # Remove multiple dots
+                return clean_value if re.match(r"^\d+(\.\d+)?$", clean_value) else value  # Preserve original if not a number
             return value
 
         def format_date(value):

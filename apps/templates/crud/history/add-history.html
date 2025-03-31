@@ -129,7 +129,7 @@
         </div>
         <div class="card-body px-0 pt-0 pb-2">
           <div class="table-responsive p-0">
-            <table class="table">
+            <table class="table align-items-center table-bordered table-hover">
               <thead>
                 <tr>
                   {% for column in column_list %}
@@ -137,6 +137,9 @@
                       {{ column_display_names|get_item:column|default:column }}
                     </th>                
                   {% endfor %}
+                  <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                    Created by
+                  </th> 
                 </tr>
               </thead>
               <tbody id="table-body">
@@ -150,11 +153,14 @@
                       data-column="{{ column }}">{{ data|getattr_filter:column }}</td>
                     {% endfor %}
                     <td>
+                      {{ data.created_by }}
+                    </td>
+                    <td>
                       <form action="{% url 'delete_history' data.id %}" method="POST">
                           {% csrf_token %}
                           <button type="submit" class="btn btn-sm bg-gradient-danger btn-sm delete-btn">Delete</button>
                       </form>
-                  </td>
+                    </td>
                   </tr>
                 {% empty %}
                   <tr>

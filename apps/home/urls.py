@@ -10,7 +10,8 @@ from apps.home import views
 from apps.home.views import ProjectListView, ProjectTableView, ProjectFlexTableView
 from apps.home.views import DonwloadTablePreview, export_data, UpdateDataView, UpdateHistoryView, UpdateHistoryActionView
 from apps.home.views import ImportAndPreviewView, discard_data, preview_merge_data, merge_selected_data
-from apps.home.views import CreateDataView, AddHistoryView, DeleteHistoryView, FundTableView, FundDeleteView
+from apps.home.views import CreateDataView, AddHistoryView, DeleteHistoryView, FundTableView, FundDeleteView, ProfileView, AdminProfileView
+from apps.home.views import project_chart_data
 
 urlpatterns = [
 
@@ -18,6 +19,8 @@ urlpatterns = [
     path('', views.index, name='home'),
 
     path('dashboard/', ProjectListView.as_view(), name='dashboard'),
+    path('api/chart-data/', project_chart_data, name='project_chart_data'),
+
     path('project-table/', ProjectTableView.as_view(), name='project_table'),
     path('project-flextable/', ProjectFlexTableView.as_view(), name='project_flextable'),
 
@@ -43,9 +46,8 @@ urlpatterns = [
     path("funds/", FundTableView.as_view(), name="fund_table"),
     path("funds/delete/", FundDeleteView.as_view(), name="fund_delete"),
 
-
-    # Matches any html file
-    re_path(r'^.*\.*', views.pages, name='pages'),
+    path("profile/", ProfileView.as_view(), name="profile"),    
+    path("adminprofile/", AdminProfileView.as_view(), name="admin_profile"),    
 
 
 ]

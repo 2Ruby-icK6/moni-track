@@ -1,0 +1,103 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %} Profile {% endblock title %}
+
+{% block content %}
+
+<div class="container-fluid py-4">
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header pb-0">
+          <div class="d-flex align-items-center">
+            <p class="mb-0">Edit Profile</p>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <!-- Display messages -->
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+
+          <form method="post">
+            {% csrf_token %}
+            <p class="text-uppercase text-sm">User Information</p>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-control-label">Username</label>
+                  {{ profile_form.username }}
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-control-label">Email address</label>
+                  {{ profile_form.email }}
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-control-label">First name</label>
+                  {{ profile_form.first_name }}
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-control-label">Last name</label>
+                  {{ profile_form.last_name }}
+                </div>
+              </div>
+            </div>
+            <button type="submit" name="update_profile" class="btn bg-gradient-info">Update Profile</button>
+          </form>
+
+          <hr class="horizontal dark">
+          <p class="text-uppercase text-sm">Change Password</p>
+          <form method="post">
+            {% csrf_token %}
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-control-label">New Password</label>
+                  {{ password_form.password }}
+                </div>
+              </div>
+            </div>
+            <button type="submit" name="change_password" class="btn bg-gradient-success">Update Password</button>
+          </form>
+
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card card-profile">
+        <img src="/static/assets/img/bg-Capitol.jpg" alt="Image placeholder" class="card-img-top">
+        <div class="row justify-content-center">
+          <div class="col-4 col-lg-4 order-lg-2">
+            <div class="mt-n4 mt-lg-n6 mb-4 mb-lg-0">
+              <a href="javascript:;">
+                <img src="/static/assets/img/profile-picture/icon.jpg" class="rounded-circle img-fluid border border-2 border-white">
+              </a>
+            </div>
+          </div>
+        </div>
+        <div class="text-center mt-4">
+          <h5 class="text-uppercase">
+            {{ request.user.username }}
+          </h5>
+          <div class="h6 font-weight-300">
+            {{ request.user.first_name }} {{ request.user.last_name }}
+          </div>
+          <div class="h6 mt-4">
+            {{ request.user.email }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock content %}

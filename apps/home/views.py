@@ -18,9 +18,13 @@ from django.conf import settings
 from django.db import connection, models
 from django.forms import modelformset_factory
 from django.utils.dateparse import parse_date
+from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.models import User, Group
+from django.contrib.auth.hashers import make_password
 
 from django.views import View
 from django.views.generic import ListView, FormView, DeleteView
+from django.db.models import Count
 
 import openpyxl
 import os
@@ -29,6 +33,8 @@ import json
 from datetime import datetime
 
 from .utils import utils
+from django.utils.decorators import method_decorator
+from .decorators import unauthorized_user, allowed_user, admin_only
 
 #------------- Models -------------#
 # Main table
@@ -41,6 +47,7 @@ from .models import UpdateHistory, AddProjectHistory
 #------------- Forms -------------#
 # Auth Form
 from apps.authentication.forms import UpdateForm, ProjectForm, ProjectTimelineForm, ContractForm, UploadFileForm, FundSourceForm
+from apps.authentication.forms import ProfileUpdateForm, PasswordUpdateForm, UserCreateForm, UserRoleForm
 
 #------------- Login -------------#
 @login_required(login_url="/login/")
@@ -51,32 +58,8 @@ def index(request):
     return HttpResponse(html_template.render(context, request))
 
 
-@login_required(login_url="/login/")
-def pages(request):
-    context = {}
-    # All resource paths end in .html.
-    # Pick out the html file name from the url. And load that template.
-    try:
-
-        load_template = request.path.split('/')[-1]
-
-        if load_template == 'admin':
-            return HttpResponseRedirect(reverse('admin:index'))
-        context['segment'] = load_template
-
-        html_template = loader.get_template('home/' + load_template)
-        return HttpResponse(html_template.render(context, request))
-
-    except template.TemplateDoesNotExist:
-
-        html_template = loader.get_template('accounts/error/page-404.html')
-        return HttpResponse(html_template.render(context, request))
-
-    except:
-        html_template = loader.get_template('accounts/error/page-500.html')
-        return HttpResponse(html_template.render(context, request))
-
 #------------- Projects Dashboard -------------#
+@method_decorator(allowed_user(roles=['Admin', 'Editor', 'Viewer']), name='dispatch')
 class ProjectListView(ListView):
     model = Project
     template_name = 'home/dashboard.html'
@@ -84,23 +67,74 @@ class ProjectListView(ListView):
     paginate_by = 5
 
     def get_queryset(self):
-        queryset = Project.objects.all()
+        queryset = Project.objects.select_related("timeline", "contract", "contract__remarks").all()
+        
+        # Get filter parameters from request
+        category = self.request.GET.get('category')
+        fund = self.request.GET.get('fund')
+        municipality = self.request.GET.get('municipality')
+        office = self.request.GET.get('office')
+        sub_category = self.request.GET.get('sub_category')
+        start_year = self.request.GET.get("start_year", "")
+        end_year = self.request.GET.get("end_year", "")
+        remark = self.request.GET.get('remarks', "")
+        search_query = self.request.GET.get("search", "")
+
+        # Apply filters dynamically
+        if category:
+            queryset = queryset.filter(category__category=category)
+        if fund:
+            queryset = queryset.filter(fund__fund=fund)
+        if municipality:
+            queryset = queryset.filter(municipality__municipality=municipality)
+        if office:
+            queryset = queryset.filter(office__office=office)
+        if sub_category:
+            queryset = queryset.filter(sub_category__sub_category=sub_category)
+        if start_year and end_year:
+            queryset = queryset.filter(year__year__range=(start_year, end_year))
+        if remark:
+            queryset = queryset.filter(contract__remarks__remark=remark)
+        
+        # Search functionality
+        if search_query:
+            queryset = queryset.filter(
+                Q(project_number__icontains=search_query) |
+                Q(project_name__icontains=search_query)
+            )
 
         return queryset
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        filtered_queryset = self.get_queryset()
+        context['total_results'] = filtered_queryset.count()
 
         context['category'] = Category.objects.values_list('category', flat=True).distinct().order_by('category')
         context['fund'] = FundSource.objects.values_list('fund', flat=True).distinct().order_by('fund')
         context['municipality'] = Municipality.objects.values_list('municipality', flat=True).distinct().order_by('municipality')
         context['office'] = Office.objects.values_list('office', flat=True).distinct().order_by('office')
         context['sub_category'] = SubCategory.objects.values_list('sub_category', flat=True).distinct().order_by('sub_category')
+        context['remark'] = Remark.objects.values_list('remark', flat=True).distinct().order_by('remark')
         context['year'] = Year.objects.values_list('year', flat=True).distinct().order_by('year')
-
+        context['page_title'] = "Dashboard"
         return context
 
+# API View for Chart Data
+def project_chart_data(request):
+    projects_per_year = (
+        Project.objects.values("year__year")  # Correct reference to Year model
+        .annotate(count=Count("project_number"))  # Count projects per year
+        .order_by("year__year")
+    )
+
+    labels = [entry["year__year"] for entry in projects_per_year if entry["year__year"] is not None]
+    data = [entry["count"] for entry in projects_per_year if entry["year__year"] is not None]
+
+    return JsonResponse({"labels": labels, "data": data})
+
 #------------- Projects Table -------------#
+@method_decorator(allowed_user(roles=['Admin', 'Editor', 'Viewer']), name='dispatch')
 class ProjectTableView(ListView):
     model = Project
     template_name = 'home/tables.html'
@@ -162,6 +196,7 @@ class ProjectTableView(ListView):
         context['remark'] = Remark.objects.values_list('remark', flat=True).distinct().order_by('remark')
         context['show_search_table'] = True
         context['show_search_flextable'] = False
+        context['page_title'] = "Infracstructure Table"
 
         # Pass selected filters to the template for form repopulation
         context['selected_filters'] = {
@@ -177,11 +212,12 @@ class ProjectTableView(ListView):
         return context
     
 #------------- Projects Flex Table -------------#
+@method_decorator(allowed_user(roles=['Admin', 'Editor', 'Viewer']), name='dispatch')
 class ProjectFlexTableView(ListView):
     model = Project
     template_name = "home/flex-tables.html"
     context_object_name = "projects"
-    paginate_by = 10
+    paginate_by = 15
 
     def get_queryset(self):
         queryset = Project.objects.select_related("timeline", "contract", "contract__remarks").annotate(
@@ -285,12 +321,14 @@ class ProjectFlexTableView(ListView):
             "remark": Remark.objects.values_list("remark", flat=True).order_by("remark"),
             "selected_filters": self.request.GET,
             "show_search_table": False,  # Change based on logic
-            "show_search_flextable": True  # Change based on logic
+            "show_search_flextable": True,  # Change based on logic
+            "page_title": "Flex Table"
         })
 
         return context
     
 #------------- Download Table Preview -------------#
+@method_decorator(allowed_user(roles=['Admin', 'Editor']), name='dispatch')
 class DonwloadTablePreview(ListView):
     model = Project
     template_name = "crud/file/download-file.html"
@@ -349,6 +387,7 @@ class DonwloadTablePreview(ListView):
 
         filtered_queryset = self.get_queryset()
         context['total_results'] = filtered_queryset.count()
+        context['page_title'] = "Download"
         
         column_display_names = {
             "project_number": "NO",
@@ -479,6 +518,7 @@ def export_data(request):
 ProjectTimelineFormSet = inlineformset_factory(Project, ProjectTimeline, form=ProjectTimelineForm, extra=0, can_delete=True)
 ContractFormSet = inlineformset_factory(Project, Contract, form=ContractForm, extra=0, can_delete=True)
 
+@method_decorator(allowed_user(roles=['Admin', 'Editor']), name='dispatch')
 class UpdateDataView(View):
     template_name = 'crud/update-infra.html'
 
@@ -509,7 +549,8 @@ class UpdateDataView(View):
             'form': form,
             'project': project,
             'timeline_formset': timeline_formset,
-            'contract_formset': contract_formset
+            'contract_formset': contract_formset,
+            "page_title": "Update Infrastructure"
         })
 
     def post(self, request, pk):
@@ -606,14 +647,21 @@ class UpdateDataView(View):
             'form': form,
             'project': project,
             'timeline_formset': timeline_formset,
-            'contract_formset': contract_formset
+            'contract_formset': contract_formset,
+            "page_title": "Update Infrastructure"
         })
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = "Update Infrastructure"
+
+        return context
 
 #------------- Udpate History Project -------------#
+@method_decorator(allowed_user(roles=['Admin', 'Editor']), name='dispatch')
 class UpdateHistoryView(ListView):
     """
-    Displays update history for the logged-in user and provides actions
-    to revert (undo) or accept changes.
+    Displays update history for all users.
     """
     model = UpdateHistory
     template_name = "crud/history/update-history.html"
@@ -621,17 +669,27 @@ class UpdateHistoryView(ListView):
     ordering = ["-updated_at"]
 
     def get_queryset(self):
-        return UpdateHistory.objects.filter(updated_by=self.request.user)
+        return UpdateHistory.objects.all()  # All users can view history
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = "Updated History"
+        return context
 
+@method_decorator(allowed_user(roles=['Admin', 'Editor']), name='dispatch')
 class UpdateHistoryActionView(View):
     """
-    Handles user actions: revert (undo) or accept changes.
+    Handles the revert (undo) action. The accept option has been removed.
     """
-
     def post(self, request, history_id, action):
-        history_entry = get_object_or_404(UpdateHistory, id=history_id, updated_by=request.user)
-        project = history_entry.project
+        history_entry = get_object_or_404(UpdateHistory, id=history_id)
 
+        # Check if the logged-in user is the one who made the update
+        if history_entry.updated_by != request.user:
+            messages.error(request, "You can only revert your own updates.")
+            return redirect("update-history")
+
+        project = history_entry.project
         field_name = history_entry.field_name
         old_value = history_entry.old_value
 
@@ -668,14 +726,11 @@ class UpdateHistoryActionView(View):
             # Remove the history entry after reverting
             history_entry.delete()
             messages.success(request, f"Reverted {field_name} to '{old_value}'.")
-        
-        elif action == "accept":
-            history_entry.delete()
-            messages.success(request, f"Accepted change for {field_name}.")
 
         return redirect("update-history")
 
 #------------- Upload File -------------#
+@method_decorator(allowed_user(roles=['Admin', 'Editor']), name='dispatch')
 class ImportAndPreviewView(View):
     template_name = "crud/file/import-file.html"
 
@@ -823,7 +878,9 @@ class ImportAndPreviewView(View):
             "is_paginated": page_obj.has_other_pages(),
             "total_results": dump_data.count(),
             "column_list": column_list,
-            "column_display_names": column_display_names
+            "column_display_names": column_display_names,
+            "page_title": "Import"
+
         }
 
 def discard_data(request):
@@ -834,6 +891,7 @@ def discard_data(request):
     return redirect("import_file")
 
 #------------- Merge Preview -------------#
+@method_decorator(allowed_user(roles=['Admin', 'Editor']), name='dispatch')
 def preview_merge_data(request):
     dump_data = DumpRawData.objects.all()
     changes = []
@@ -983,7 +1041,7 @@ def preview_merge_data(request):
         if entry_changes["fields"]:
             changes.append(entry_changes)
 
-    return render(request, "crud/file/merge-preview.html", {"changes": changes, "new_projects": new_projects})
+    return render(request, "crud/file/merge-preview.html", {"changes": changes, "new_projects": new_projects, "page_title": "Prview Merge Data"})
 
 def compare_project_fields(main_entry, dump_entry, foreign_key_fields):
     """ Compare only fields that belong to the Project model, excluding 'sub_category' """
@@ -1067,6 +1125,7 @@ def compare_timeline_fields(timeline_entry, dump_entry):
 
     return changes
 
+@method_decorator(allowed_user(roles=['Admin', 'Editor']), name='dispatch')
 def merge_selected_data(request):
     if request.method == "POST":
         selected_entries = request.POST.getlist("selected_entries")
@@ -1078,7 +1137,12 @@ def merge_selected_data(request):
         all_entries = DumpRawData.objects.all()
         process_all = "ALL" in selected_entries  # Check if 'ALL' is selected
 
-        for dump_entry in (all_entries if process_all else [DumpRawData.objects.get(project_number=entry.split("_")[0]) for entry in selected_entries]):
+        # Correct filtering method
+        selected_dump_entries = all_entries if process_all else DumpRawData.objects.filter(
+            project_number__in=selected_entries
+        )
+
+        for dump_entry in selected_dump_entries:
             project_number = dump_entry.project_number
             main_entry, created = Project.objects.get_or_create(project_number=project_number)
 
@@ -1090,78 +1154,81 @@ def merge_selected_data(request):
             fund_instance = FundSource.objects.get_or_create(fund=dump_entry.fund)[0] if dump_entry.fund else None
             remarks_instance = Remark.objects.get_or_create(remark=dump_entry.remarks)[0] if dump_entry.remarks else None
 
-            for field_name in Project._meta.fields:
-                if field_name.name in ["id", "updated_at", "sub_category"]:
+            # Update Project fields
+            for field in Project._meta.fields:
+                if field.name in ["id", "updated_at", "sub_category"]:
                     continue
 
-                old_value = getattr(main_entry, field_name.name, None)
-                new_value = getattr(dump_entry, field_name.name, None)
+                old_value = getattr(main_entry, field.name, None)
+                new_value = getattr(dump_entry, field.name, None)
 
-                if field_name.name == "year":
+                if field.name == "year":
                     new_value = year_instance
-                elif field_name.name == "category":
+                elif field.name == "category":
                     new_value = category_instance
-                elif field_name.name == "municipality":
+                elif field.name == "municipality":
                     new_value = municipality_instance
-                elif field_name.name == "office":
+                elif field.name == "office":
                     new_value = office_instance
-                elif field_name.name == "fund":
+                elif field.name == "fund":
                     new_value = fund_instance
 
                 if old_value != new_value:
                     UpdateHistory.objects.create(
                         project=main_entry,
-                        field_name=field_name.name,
+                        field_name=field.name,
                         old_value=old_value,
                         new_value=new_value,
                         updated_by=request.user
                     )
-                    setattr(main_entry, field_name.name, new_value)
+                    setattr(main_entry, field.name, new_value)
             main_entry.save()
 
+            # Update Contract fields
             contract_entry, _ = Contract.objects.get_or_create(project=main_entry)
-            for field_name in Contract._meta.fields:
-                if field_name.name in ["id", "project"]:
+            for field in Contract._meta.fields:
+                if field.name in ["id", "project"]:
                     continue
 
-                old_value = getattr(contract_entry, field_name.name, None)
-                new_value = getattr(dump_entry, field_name.name, None)
+                old_value = getattr(contract_entry, field.name, None)
+                new_value = getattr(dump_entry, field.name, None)
 
-                if field_name.name == "remarks":
+                if field.name == "remarks":
                     new_value = remarks_instance
 
                 if old_value != new_value:
                     UpdateHistory.objects.create(
                         project=main_entry,
-                        field_name=f"Contract: {field_name.name}",
+                        field_name=f"Contract: {field.name}",
                         old_value=old_value,
                         new_value=new_value,
                         updated_by=request.user
                     )
-                    setattr(contract_entry, field_name.name, new_value)
+                    setattr(contract_entry, field.name, new_value)
             contract_entry.save()
 
+            # Update Timeline fields
             timeline_entry, _ = ProjectTimeline.objects.get_or_create(project=main_entry)
-            for field_name in ProjectTimeline._meta.fields:
-                if field_name.name in ["id", "project"]:
+            for field in ProjectTimeline._meta.fields:
+                if field.name in ["id", "project"]:
                     continue
 
-                old_value = getattr(timeline_entry, field_name.name, None)
-                new_value = getattr(dump_entry, field_name.name, None)
+                old_value = getattr(timeline_entry, field.name, None)
+                new_value = getattr(dump_entry, field.name, None)
 
                 if old_value != new_value:
                     UpdateHistory.objects.create(
                         project=main_entry,
-                        field_name=f"Timeline: {field_name.name}",
+                        field_name=f"Timeline: {field.name}",
                         old_value=old_value,
                         new_value=new_value,
                         updated_by=request.user
                     )
-                    setattr(timeline_entry, field_name.name, new_value)
+                    setattr(timeline_entry, field.name, new_value)
             timeline_entry.save()
 
-        with connection.cursor() as cursor:
-            cursor.execute("TRUNCATE TABLE home_dumprawdata;")
+        # ✅ Delete only selected DumpRawData entries
+        DumpRawData.objects.filter(project_number__in=selected_entries).delete()
 
         messages.success(request, "Selected data merged successfully!")
         return redirect("update-history")
@@ -1172,6 +1239,7 @@ def merge_selected_data(request):
 ProjectTimelineFormSet = inlineformset_factory(Project, ProjectTimeline, form=ProjectTimelineForm, extra=1, can_delete=True)
 ContractFormSet = inlineformset_factory(Project, Contract, form=ContractForm, extra=1, can_delete=True)
 
+@method_decorator(allowed_user(roles=['Admin', 'Editor']), name='dispatch')
 class CreateDataView(View):
     template_name = 'crud/add-infra.html'
 
@@ -1183,7 +1251,9 @@ class CreateDataView(View):
         return render(request, self.template_name, {
             'form': form,
             'timeline_formset': timeline_formset,
-            'contract_formset': contract_formset
+            'contract_formset': contract_formset,
+            "page_title": "Add New Project"
+
         })
 
     def post(self, request):
@@ -1273,7 +1343,7 @@ class CreateDataView(View):
                 project_contractor=project_contractor,
                 tin_number=tin_number,
                 reason=reason,
-                updated_by=request.user
+                created_by=request.user
             )
 
             messages.success(request, "Project successfully added!")
@@ -1285,7 +1355,11 @@ class CreateDataView(View):
             'contract_formset': contract_formset
         })
 
+@method_decorator(allowed_user(roles=['Admin', 'Editor']), name='dispatch')
 class AddHistoryView(View):
+    """
+    Displays all added history entries. Accessible by all users.
+    """
     template_name = 'crud/history/add-history.html'
 
     def get(self, request):
@@ -1328,10 +1402,24 @@ class AddHistoryView(View):
             "reason": "Reason"
         }
 
-        return render(request, self.template_name, {'history': history, "column_list": column_list, "column_display_names": column_display_names})
+        return render(request, self.template_name, {
+            'history': history, 
+            "column_list": column_list, 
+            "column_display_names": column_display_names,
+            "page_title": "Added History"
+        })
 
+@method_decorator(allowed_user(roles=['Admin', 'Editor']), name='dispatch')
 class DeleteHistoryView(View):
+    """
+    Allows only Admins and Editors to delete history entries.
+    """
     def post(self, request, pk):
+        # Ensure only Admins and Editors can delete
+        if not request.user.groups.filter(name__in=["Admin", "Editor"]).exists():
+            messages.error(request, "You do not have permission to delete history entries.")
+            return redirect('add-history')
+
         history_entry = get_object_or_404(AddProjectHistory, pk=pk)
 
         # Delete related project entry
@@ -1357,7 +1445,8 @@ class DeleteHistoryView(View):
             cursor.execute(f"ALTER TABLE {table_name} AUTO_INCREMENT = {start_value};")
 
 #------------- Fund Table -------------#
-class FundTableView(ListView, FormView):
+@method_decorator(allowed_user(roles=['Admin', 'Editor']), name='dispatch')
+class FundTableView(ListView, FormView):    
     model = FundSource
     template_name = 'crud/fund/fund.html'
     context_object_name = 'funds'
@@ -1375,6 +1464,7 @@ class FundTableView(ListView, FormView):
         context = super().get_context_data(**kwargs)
         context["form"] = self.get_form()
         context["search_query"] = self.request.GET.get("search", "")
+        context['page_title'] = "Source Fund Table"
         return context
 
     def post(self, request, *args, **kwargs):
@@ -1387,6 +1477,7 @@ class FundTableView(ListView, FormView):
             messages.error(request, "Error adding fund. Please check the input.")
             return self.get(request, *args, **kwargs)
 
+@method_decorator(allowed_user(roles=['Admin', 'Editor']), name='dispatch')
 class FundDeleteView(View):
     """Handles deleting a fund via AJAX"""
     def post(self, request, *args, **kwargs):
@@ -1398,4 +1489,129 @@ class FundDeleteView(View):
             return JsonResponse({"success": True, "message": f"Fund '{fund_name}' deleted successfully!"})
         except FundSource.DoesNotExist:
             return JsonResponse({"success": False, "message": "Fund not found."})
+
+#------------- Profile -------------#
+@method_decorator(allowed_user(roles=['Admin', 'Editor', 'Viewer']), name='dispatch')
+class ProfileView(View):
+    """View and Update User Profile"""
+
+    def get(self, request):
+        profile_form = ProfileUpdateForm(instance=request.user)
+        password_form = PasswordUpdateForm()
+        return render(request, "accounts/profile/profile.html", {
+            "profile_form": profile_form,
+            "password_form": password_form,
+            "page_title": "Profile"
+        })
+
+    def post(self, request):
+        profile_form = ProfileUpdateForm(request.POST, instance=request.user)
+        password_form = PasswordUpdateForm(request.POST)
+
+        if "update_profile" in request.POST:
+            if profile_form.is_valid():
+                profile_form.save()
+                messages.success(request, "Profile updated successfully!")
+                return redirect("profile")
+
+        elif "change_password" in request.POST:
+            if password_form.is_valid():
+                new_password = password_form.cleaned_data["password"]
+                request.user.set_password(new_password)
+                request.user.save()
+                update_session_auth_hash(request, request.user)  # Keeps user logged in
+                messages.success(request, "Password updated successfully!")
+                return redirect("profile")
+
+        messages.error(request, "Error updating profile. Please check the form.")
+        return render(request, "profile.html", {
+            "profile_form": profile_form,
+            "password_form": password_form
+        })
+
+@method_decorator(allowed_user(roles=['Admin']), name='dispatch')
+class AdminProfileView(View):
+    """Admin Profile View - Manage Users, Roles, and Own Profile"""
+
+    def get(self, request):
+        if not request.user.is_superuser:
+            messages.error(request, "Access Denied! Admins only.")
+            return redirect("profile")
+
+        profile_form = ProfileUpdateForm(instance=request.user)
+        password_form = PasswordUpdateForm()
+        user_create_form = UserCreateForm()
+        role_form = UserRoleForm()
+        users = User.objects.all()
+        groups = Group.objects.all()  # Fetch all groups (Admin, Editor, Viewer)
+
+        return render(request, "accounts/profile/admin-profile.html", {
+            "profile_form": profile_form,
+            "password_form": password_form,
+            "user_create_form": user_create_form,
+            "role_form": role_form,
+            "users": users,
+            "groups": groups,
+            "page_title": "AdminProfile"
+        })
+
+    def post(self, request):
+        if not request.user.is_superuser:
+            messages.error(request, "Access Denied! Admins only.")
+            return redirect("profile")
+
+        if "update_profile" in request.POST:
+            profile_form = ProfileUpdateForm(request.POST, instance=request.user)
+            if profile_form.is_valid():
+                profile_form.save()
+                messages.success(request, "Profile updated successfully!")
+                return redirect("admin_profile")
+
+        elif "change_password" in request.POST:
+            password_form = PasswordUpdateForm(request.POST)
+            if password_form.is_valid():
+                new_password = password_form.cleaned_data["password"]
+                request.user.set_password(new_password)
+                request.user.save()
+                update_session_auth_hash(request, request.user)  # Keep admin logged in
+                messages.success(request, "Password updated successfully!")
+                return redirect("admin_profile")
+
+        elif "add_user" in request.POST:
+            user_create_form = UserCreateForm(request.POST)
+            if user_create_form.is_valid():
+                user = user_create_form.save(commit=False)
+                user.password = make_password(user_create_form.cleaned_data["password"])
+                user.save()
+
+                # Assign user to selected role
+                role = request.POST.get("role")
+                if role:
+                    group = Group.objects.filter(name=role).first()
+                    if group:
+                        user.groups.add(group)
+
+                messages.success(request, f"New user added successfully! Assigned role: {role}")
+                return redirect("admin_profile")
+
+        elif "assign_role" in request.POST:
+            role_form = UserRoleForm(request.POST)
+            if role_form.is_valid():
+                user_id = role_form.cleaned_data["user"].id
+                role = role_form.cleaned_data["role"]
+
+                user = User.objects.get(id=user_id)
+                group = Group.objects.filter(name=role).first()
+
+                if group:
+                    user.groups.clear()  # Remove existing roles
+                    user.groups.add(group)
+                    messages.success(request, f"{user.username} is now assigned as {role}.")
+                else:
+                    messages.error(request, "Invalid role selected.")
+
+                return redirect("admin_profile")
+
+        messages.error(request, "Error processing the request.")
+        return redirect("admin_profile")
 

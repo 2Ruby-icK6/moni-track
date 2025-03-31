@@ -9,12 +9,16 @@
     <div class="card-header pb-0">
       <div class="d-flex align-items-center">
         <p class="mb-0">Merge Preview</p>
+
         <a href="{% url 'import_file' %}" class="btn btn-sm bg-gradient-danger ms-auto d-flex gap-1 align-items-center justify-content-center">
           <i class="ni ni-curved-next me-sm-1"></i>
           <span class="d-sm-inline d-none">Back to Import</span></a>
       </div>
     </div>
     <div class="card-body">
+        <div class="d-flex gap-3">
+            <button type="button" id="toggle-all" class="btn btn-success mb-3">Select All</button>
+        </div>
         <form method="POST" action="{% url 'merge_selected_data' %}">
             {% csrf_token %}
         <div class="table-responsive p-0">
@@ -59,7 +63,7 @@
             </tbody>
             </table>
 
-            <input type="hidden" name="selected_entries" id="selected-entries">
+            <div id="selected-entries-container"></div>
 
             <button type="submit" class="btn btn-success mt-3">Merge Selected</button>
             <a href="{% url 'import_file' %}" class="btn btn-secondary mt-3">Cancel</a>
@@ -76,13 +80,22 @@
 {% block javascripts %}
 <script>
     document.addEventListener("DOMContentLoaded", function() {
+        const MAX_SELECTION = 300;
         const toggleAllBtn = document.getElementById("toggle-all");
-        const selectedEntriesInput = document.getElementById("selected-entries");
+        const selectedEntriesContainer = document.getElementById("selected-entries-container");
         const selectedEntries = new Set();
-        let allSelected = false; // Track if all rows are selected
 
         function updateSelectedEntries() {
-            selectedEntriesInput.value = Array.from(selectedEntries).join(",");
+            selectedEntriesContainer.innerHTML = "";
+            selectedEntries.forEach(entry => {
+                let input = document.createElement("input");
+                input.type = "hidden";
+                input.name = "selected_entries";
+                input.value = entry.split("_")[0]; // Only store project_number
+                selectedEntriesContainer.appendChild(input);
+            });
+
+            toggleAllBtn.disabled = selectedEntries.size >= MAX_SELECTION;
         }
 
         document.querySelectorAll(".select-btn").forEach(button => {
@@ -96,6 +109,10 @@
                     this.classList.replace("btn-danger", "btn-success");
                     row.classList.remove("table-success");
                 } else {
+                    if (selectedEntries.size >= MAX_SELECTION) {
+                        alert(`You can only select up to ${MAX_SELECTION} projects.`);
+                        return;
+                    }
                     selectedEntries.add(value);
                     this.textContent = "Unselect";
                     this.classList.replace("btn-success", "btn-danger");
@@ -107,29 +124,35 @@
         });
 
         toggleAllBtn.addEventListener("click", function() {
-            const buttons = document.querySelectorAll(".select-btn");
-            allSelected = !allSelected; // Toggle selection state
+            const buttons = Array.from(document.querySelectorAll(".select-btn"));
+            let count = selectedEntries.size;
+            let canSelectMore = count < MAX_SELECTION;
 
-            buttons.forEach(button => {
-                const value = button.dataset.value;
-                const row = button.closest("tr");
+            if (canSelectMore) {
+                buttons.forEach(button => {
+                    const value = button.dataset.value;
+                    const row = button.closest("tr");
 
-                if (allSelected) {
-                    selectedEntries.add(value);
-                    button.textContent = "Unselect";
-                    button.classList.replace("btn-success", "btn-danger");
-                    row.classList.add("table-success");
-                } else {
-                    selectedEntries.delete(value);
+                    if (!selectedEntries.has(value) && count < MAX_SELECTION) {
+                        selectedEntries.add(value);
+                        button.textContent = "Unselect";
+                        button.classList.replace("btn-success", "btn-danger");
+                        row.classList.add("table-success");
+                        count++;
+                    }
+                });
+            } else {
+                selectedEntries.clear();
+                buttons.forEach(button => {
                     button.textContent = "Select";
                     button.classList.replace("btn-danger", "btn-success");
-                    row.classList.remove("table-success");
-                }
-            });
+                    button.closest("tr").classList.remove("table-success");
+                });
+            }
 
-            toggleAllBtn.textContent = allSelected ? "Unselect All" : "Select All";
-            toggleAllBtn.classList.toggle("btn-danger", allSelected);
-            toggleAllBtn.classList.toggle("btn-success", !allSelected);
+            toggleAllBtn.textContent = selectedEntries.size ? "Unselect All" : "Select All";
+            toggleAllBtn.classList.toggle("btn-danger", selectedEntries.size > 0);
+            toggleAllBtn.classList.toggle("btn-success", selectedEntries.size === 0);
             
             updateSelectedEntries();
         });

@@ -5,7 +5,7 @@ Copyright (c) 2019 - present AppSeed.us
 
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 
@@ -66,6 +66,24 @@ class SignUpForm(UserCreationForm):
         model = User
         fields = ('username', 'email', 'password1', 'password2')
 
+class ProfileUpdateForm(forms.ModelForm):
+    """Form for updating user profile."""
+    class Meta:
+        model = User
+        fields = ["username", "email", "first_name", "last_name"]
+        widgets = {
+            "username": forms.TextInput(attrs={"class": "form-control"}),
+            "email": forms.EmailInput(attrs={"class": "form-control"}),
+            "first_name": forms.TextInput(attrs={"class": "form-control"}),
+            "last_name": forms.TextInput(attrs={"class": "form-control"}),
+        }
+
+class PasswordUpdateForm(forms.Form):
+    """Form for updating user password."""
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={"class": "form-control", "placeholder": "New Password"})
+    )
+
 class UpdateForm(forms.ModelForm):
 
     search_project_number = forms.ModelChoiceField(
@@ -105,6 +123,29 @@ class UpdateForm(forms.ModelForm):
                 cleaned_data[field] = None
 
         return cleaned_data
+
+class UserCreateForm(forms.ModelForm):
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={"class": "form-control", "placeholder": "Enter Password"})
+    )
+
+    class Meta:
+        model = User
+        fields = ["username", "email", "password", "is_staff", "is_superuser"]
+        widgets = {
+            "username": forms.TextInput(attrs={"class": "form-control"}),
+            "email": forms.EmailInput(attrs={"class": "form-control"}),
+        }
+
+class UserRoleForm(forms.Form):
+    user = forms.ModelChoiceField(
+        queryset=User.objects.all(),
+        widget=forms.Select(attrs={"class": "form-control select2", 'data-placeholder': 'Select User'})
+    )
+    role = forms.ModelChoiceField(
+        queryset=Group.objects.all(),
+        widget=forms.Select(attrs={"class": "form-control select2", 'data-placeholder': 'Select Role'})
+    )
 
 # ============================= Form Table =============================================
 class ProjectForm(forms.ModelForm):
@@ -211,6 +252,8 @@ class FundSourceForm(forms.ModelForm):
             widgets = {
                 'fund': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter New Fund'})
             }
+
 # ============================= Dump table Storage =============================================
 class UploadFileForm(forms.Form):
     file = forms.FileField()
+

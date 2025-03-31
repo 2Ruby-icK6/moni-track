@@ -64,47 +64,43 @@
         "ID":"16"
     },
     {
-        "REMARKS":"On going",
+        "REMARKS":"Order of Termination",
         "ID":"17"
     },
     {
-        "REMARKS":"Order of Termination",
+        "REMARKS":"PEEDO Validate",
         "ID":"18"
     },
     {
-        "REMARKS":"PEEDO Validate",
+        "REMARKS":"Re-aligned",
         "ID":"19"
     },
     {
-        "REMARKS":"Re-aligned",
+        "REMARKS":"Recently Awarded",
         "ID":"20"
     },
     {
-        "REMARKS":"Recently Awarded",
+        "REMARKS":"Reverted",
         "ID":"21"
     },
     {
-        "REMARKS":"Reverted",
+        "REMARKS":"Slow movement",
         "ID":"22"
     },
     {
-        "REMARKS":"Slow movement",
+        "REMARKS":"Stop construction",
         "ID":"23"
     },
     {
-        "REMARKS":"Stop construction",
+        "REMARKS":"Subject for Reversion",
         "ID":"24"
     },
     {
-        "REMARKS":"Subject for Reversion",
+        "REMARKS":"Suspended",
         "ID":"25"
     },
     {
-        "REMARKS":"Suspended",
-        "ID":"26"
-    },
-    {
         "REMARKS":"Terminated",
-        "ID":"27"
+        "ID":"26"
     }
 ]
