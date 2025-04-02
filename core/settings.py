@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'import_export',
+    'widget_tweaks',
     'apps.home'  # Enable the inner home (home)
 ]
 
