@@ -753,10 +753,12 @@ class ImportAndPreviewView(View):
                 temp_json_path, data = self.process_file(file)
 
                 if not data:
+                    self.cleanup_file(temp_json_path)
                     raise ValueError("Error: The uploaded file is empty or unreadable.")
 
                 quarter_column = self.detect_quarter_column(data)
                 if not quarter_column:
+                    self.cleanup_file(temp_json_path)
                     raise ValueError("Error: 'Quarter' column not found in the dataset.")
                 
                 expected_columns = {"NO.", "PROVINCIAL GOVERNMENT OF PALAWAN PROJECT NAME", "PROJECT ID", "PPDO CATEGORY", 
@@ -768,10 +770,12 @@ class ImportAndPreviewView(View):
                 file_columns = set(data[0].keys())
                 
                 if not expected_columns.issubset(file_columns):
+                    self.cleanup_file(temp_json_path)
                     raise ValueError("Error: The uploaded file has an incorrect format or missing required columns.")
 
                 errors = self.validate_data(data)
                 if errors:
+                    self.cleanup_file(temp_json_path)
                     raise ValueError("Data validation failed: " + "; ".join(errors))
 
                 DumpRawData.objects.all().delete()
@@ -800,13 +804,16 @@ class ImportAndPreviewView(View):
             with open(temp_json_path, "r", encoding="utf-8") as json_file:
                 data = json.load(json_file)
         except Exception:
-            os.remove(temp_excel_path)
-            if os.path.exists(temp_json_path):
-                os.remove(temp_json_path)
+            self.cleanup_file(temp_excel_path, temp_json_path)
             return None, None
 
-        os.remove(temp_excel_path)
+        self.cleanup_file(temp_excel_path)
         return temp_json_path, data
+
+    def cleanup_file(self, *file_paths):
+        for file_path in file_paths:
+            if file_path and os.path.exists(file_path):
+                os.remove(file_path)
 
     def detect_quarter_column(self, data):
         for key in data[0].keys():

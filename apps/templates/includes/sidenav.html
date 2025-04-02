@@ -1,11 +1,17 @@
 {% if user.groups.all|join:', ' == 'Editor' %}
 <nav class="sidenav bg-white navbar navbar-vertical navbar-expand-xs border-0 border-radius-xl my-3 fixed-start ms-4 " id="sidenav-main">
-  <div class="sidenav-header">
-    <i class="fas fa-times p-3 cursor-pointer text-secondary opacity-5 position-absolute end-0 top-0 d-none d-xl-none" aria-hidden="true" id="iconSidenav"></i>
-    <a class="navbar-brand m-0 text-center" href="{% url 'home' %}">
-      <!-- <img src="/static/assets/img/PGP-Logo.png" width="36px" height="36px" class="navbar-brand-img h-100" alt="main_logo"> -->
-      <span class="ms-1 text-wrap font-weight-bold">Program & Project</span>
-      <span class="ms-1 text-wrap font-weight-bold">Monitoring Portal</span>
+  <div class="sidenav-header text-center">
+    <button class="btn p-3 text-secondary opacity-5 position-absolute end-0 top-0 d-xl-none" aria-label="Close" id="iconSidenav">
+        <i class="fas fa-times"></i>
+    </button>
+    <a class="navbar-brand m-0 d-flex align-items-center justify-content-center flex-column" href="{% url 'home' %}">
+        <div class="d-flex align-items-center">
+            <img src="/static/assets/img/PGP-Logo.png" width="36" height="36" class="navbar-brand-img me-2" alt="PGP Logo">
+            <div class="d-flex flex-column text-start">
+                <span class="text-wrap font-weight-bold">Program & Project</span>
+                <span class="text-wrap font-weight-bold">Monitoring Portal</span>
+            </div>
+        </div>
     </a>
   </div>
   <hr class="horizontal dark mt-0">
@@ -75,14 +81,21 @@
 
 {% elif user.groups.all|join:', ' == 'Admin' %}
 <nav class="sidenav bg-white navbar navbar-vertical navbar-expand-xs border-0 border-radius-xl my-3 fixed-start ms-4 " id="sidenav-main">
-  <div class="sidenav-header">
-    <i class="fas fa-times p-3 cursor-pointer text-secondary opacity-5 position-absolute end-0 top-0 d-none d-xl-none" aria-hidden="true" id="iconSidenav"></i>
-    <a class="navbar-brand m-0 text-center" href="{% url 'home' %}">
-      <!-- <img src="/static/assets/img/PGP-Logo.png" width="36px" height="36px" class="navbar-brand-img h-100" alt="main_logo"> -->
-      <span class="ms-1 text-wrap font-weight-bold">Program & Project</span>
-      <span class="ms-1 text-wrap font-weight-bold">Monitoring Portal</span>
+  <div class="sidenav-header text-center">
+    <button class="btn p-3 text-secondary opacity-5 position-absolute end-0 top-0 d-xl-none" aria-label="Close" id="iconSidenav">
+        <i class="fas fa-times"></i>
+    </button>
+    <a class="navbar-brand m-0 d-flex align-items-center justify-content-center flex-column" href="{% url 'home' %}">
+        <div class="d-flex align-items-center">
+            <img src="/static/assets/img/PGP-Logo.png" width="36" height="36" class="navbar-brand-img me-2" alt="PGP Logo">
+            <div class="d-flex flex-column text-start">
+                <span class="text-wrap font-weight-bold">Program & Project</span>
+                <span class="text-wrap font-weight-bold">Monitoring Portal</span>
+            </div>
+        </div>
     </a>
   </div>
+
   <hr class="horizontal dark mt-0">
   <div class="collapse navbar-collapse  w-auto " id="sidenav-collapse-main">
     <ul class="navbar-nav">
@@ -149,12 +162,18 @@
 
 {% elif user.groups.all|join:', ' == 'Viewer' %}
 <nav class="sidenav bg-white navbar navbar-vertical navbar-expand-xs border-0 border-radius-xl my-3 fixed-start ms-4 " id="sidenav-main">
-  <div class="sidenav-header">
-    <i class="fas fa-times p-3 cursor-pointer text-secondary opacity-5 position-absolute end-0 top-0 d-none d-xl-none" aria-hidden="true" id="iconSidenav"></i>
-    <a class="navbar-brand m-0 text-center" href="{% url 'home' %}">
-      <!-- <img src="/static/assets/img/PGP-Logo.png" width="36px" height="36px" class="navbar-brand-img h-100" alt="main_logo"> -->
-      <span class="ms-1 text-wrap font-weight-bold">Program & Project</span>
-      <span class="ms-1 text-wrap font-weight-bold">Monitoring Portal</span>
+  <div class="sidenav-header text-center">
+    <button class="btn p-3 text-secondary opacity-5 position-absolute end-0 top-0 d-xl-none" aria-label="Close" id="iconSidenav">
+        <i class="fas fa-times"></i>
+    </button>
+    <a class="navbar-brand m-0 d-flex align-items-center justify-content-center flex-column" href="{% url 'home' %}">
+        <div class="d-flex align-items-center">
+            <img src="/static/assets/img/PGP-Logo.png" width="36" height="36" class="navbar-brand-img me-2" alt="PGP Logo">
+            <div class="d-flex flex-column text-start">
+                <span class="text-wrap font-weight-bold">Program & Project</span>
+                <span class="text-wrap font-weight-bold">Monitoring Portal</span>
+            </div>
+        </div>
     </a>
   </div>
   <hr class="horizontal dark mt-0">

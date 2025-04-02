@@ -51,9 +51,9 @@
     {% block content %}{% endblock content %}
 
   </div>
-
-  {% include "includes/footer.html" %}
-
+  {% if request.path == '/dashboard/' %}
+    {% include "includes/footer.html" %}
+  {% endif %}
 
   <!-- Specific JS goes HERE --> 
   {% block javascripts %}{% endblock javascripts %}
