@@ -46,8 +46,9 @@ from .models import UpdateHistory, AddProjectHistory
 
 #------------- Forms -------------#
 # Auth Form
-from apps.authentication.forms import UpdateForm, ProjectForm, ProjectTimelineForm, ContractForm, UploadFileForm, FundSourceForm
+from apps.authentication.forms import UpdateForm, ProjectForm, ProjectTimelineForm, ContractForm, UploadFileForm
 from apps.authentication.forms import ProfileUpdateForm, PasswordUpdateForm, UserCreateForm, UserRoleForm
+from apps.authentication.forms import FundSourceForm, CategoryForm, SubCategoryForm ,OfficeForm, YearForm
 
 #------------- Login -------------#
 @login_required(login_url="/login/")
@@ -1384,52 +1385,6 @@ class DeleteHistoryView(View):
         with connection.cursor() as cursor:
             cursor.execute(f"ALTER TABLE {table_name} AUTO_INCREMENT = {start_value};")
 
-#------------- Fund Table -------------#
-@method_decorator(allowed_user(roles=['Admin', 'Editor']), name='dispatch')
-class FundTableView(ListView, FormView):    
-    model = FundSource
-    template_name = 'crud/fund/fund.html'
-    context_object_name = 'funds'
-    paginate_by = 25
-    form_class = FundSourceForm
-
-    def get_queryset(self):
-        queryset = FundSource.objects.all()
-        search_query = self.request.GET.get("search", "").strip()
-        if search_query:
-            queryset = queryset.filter(fund__icontains=search_query)
-        return queryset
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["form"] = self.get_form()
-        context["search_query"] = self.request.GET.get("search", "")
-        context['page_title'] = "Source Fund Table"
-        return context
-
-    def post(self, request, *args, **kwargs):
-        form = self.get_form()
-        if form.is_valid():
-            fund = form.save()
-            messages.success(request, f"Fund '{fund.fund}' added successfully!")
-            return redirect("fund_table")
-        else:
-            messages.error(request, "Error adding fund. Please check the input.")
-            return self.get(request, *args, **kwargs)
-
-@method_decorator(allowed_user(roles=['Admin', 'Editor']), name='dispatch')
-class FundDeleteView(View):
-    """Handles deleting a fund via AJAX"""
-    def post(self, request, *args, **kwargs):
-        try:
-            fund_id = request.POST.get("fund_id")
-            fund = FundSource.objects.get(id=fund_id)
-            fund_name = fund.fund
-            fund.delete()
-            return JsonResponse({"success": True, "message": f"Fund '{fund_name}' deleted successfully!"})
-        except FundSource.DoesNotExist:
-            return JsonResponse({"success": False, "message": "Fund not found."})
-
 #------------- Profile -------------#
 @method_decorator(allowed_user(roles=['Admin', 'Editor', 'Viewer']), name='dispatch')
 class ProfileView(View):
@@ -1554,4 +1509,241 @@ class AdminProfileView(View):
 
         messages.error(request, "Error processing the request.")
         return redirect("admin_profile")
+
+#------------- Fund Table -------------#
+@method_decorator(allowed_user(roles=['Admin', 'Editor']), name='dispatch')
+class FundTableView(ListView, FormView):    
+    model = FundSource
+    template_name = 'crud/instances/fund/fund.html'
+    context_object_name = 'funds'
+    paginate_by = 25
+    form_class = FundSourceForm
+
+    def get_queryset(self):
+        queryset = FundSource.objects.all()
+        search_query = self.request.GET.get("search", "").strip()
+        if search_query:
+            queryset = queryset.filter(fund__icontains=search_query)
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form"] = self.get_form()
+        context["search_query"] = self.request.GET.get("search", "")
+        context['page_title'] = "Source Fund Table"
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        if form.is_valid():
+            fund = form.save()
+            messages.success(request, f"Fund '{fund.fund}' added successfully!")
+            return redirect("fund_table")
+        else:
+            messages.error(request, "Error adding fund. Please check the input.")
+            return self.get(request, *args, **kwargs)
+
+@method_decorator(allowed_user(roles=['Admin', 'Editor']), name='dispatch')
+class FundDeleteView(View):
+    """Handles deleting a fund via AJAX"""
+    def post(self, request, *args, **kwargs):
+        try:
+            fund_id = request.POST.get("fund_id")
+            fund = FundSource.objects.get(id=fund_id)
+            fund_name = fund.fund
+            fund.delete()
+            return JsonResponse({"success": True, "message": f"Fund '{fund_name}' deleted successfully!"})
+        except FundSource.DoesNotExist:
+            return JsonResponse({"success": False, "message": "Fund not found."})
+        
+#------------- Category Table -------------#
+@method_decorator(allowed_user(roles=['Admin', 'Editor']), name='dispatch')
+class CategoryTableView(ListView, FormView):    
+    model = Category
+    template_name = 'crud/instances/category/category.html'
+    context_object_name = 'category'
+    paginate_by = 25
+    form_class = CategoryForm
+
+    def get_queryset(self):
+        queryset = Category.objects.all()
+        search_query = self.request.GET.get("search", "").strip()
+        if search_query:
+            queryset = queryset.filter(category__icontains=search_query)
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form"] = self.get_form()
+        context["search_query"] = self.request.GET.get("search", "")
+        context['page_title'] = "Category Table"
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        if form.is_valid():
+            category = form.save()
+            messages.success(request, f"Category '{category.category}' added successfully!")
+            return redirect("category_table")
+        else:
+            messages.error(request, "Error adding category. Please check the input.")
+            return self.get(request, *args, **kwargs)
+
+@method_decorator(allowed_user(roles=['Admin', 'Editor']), name='dispatch')
+class CategoryDeleteView(View):
+    """Handles deleting a fund via AJAX"""
+    def post(self, request, *args, **kwargs):
+        try:
+            category_id = request.POST.get("category_id")
+            category = Category.objects.get(id=category_id)
+            category_name = category.category
+            category.delete()
+            return JsonResponse({"success": True, "message": f"Category '{category_name}' deleted successfully!"})
+        except Category.DoesNotExist:
+            return JsonResponse({"success": False, "message": "Category not found."})
+        
+#------------- Sub Category Table -------------#
+@method_decorator(allowed_user(roles=['Admin', 'Editor']), name='dispatch')
+class SubCategoryTableView(ListView, FormView):    
+    model = SubCategory
+    template_name = 'crud/instances/subcategory/subcategory.html'
+    context_object_name = 'subcategory'
+    paginate_by = 25
+    form_class = SubCategoryForm
+
+    def get_queryset(self):
+        queryset = SubCategory.objects.all()
+        search_query = self.request.GET.get("search", "").strip()
+        if search_query:
+            queryset = queryset.filter(sub_category__icontains=search_query)
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form"] = self.get_form()
+        context["search_query"] = self.request.GET.get("search", "")
+        context['page_title'] = "Sub Category Table"
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        if form.is_valid():
+            subcategory = form.save()
+            messages.success(request, f"Sub Category '{subcategory.sub_category}' added successfully!")
+            return redirect("subcategory_table")
+        else:
+            messages.error(request, "Error adding sub category. Please check the input.")
+            return self.get(request, *args, **kwargs)
+
+@method_decorator(allowed_user(roles=['Admin', 'Editor']), name='dispatch')
+class SubCategoryDeleteView(View):
+    """Handles deleting a subcategory via AJAX"""
+    def post(self, request, *args, **kwargs):
+        try:
+            subcategory_id = request.POST.get("subcategory_id")
+            subcategory = SubCategory.objects.get(id=subcategory_id)
+            subcategory_name = subcategory.sub_category
+            subcategory.delete()
+            return JsonResponse({"success": True, "message": f"Sub Category '{subcategory_name}' deleted successfully!"})
+        except SubCategory.DoesNotExist:
+            return JsonResponse({"success": False, "message": "Sub Category not found."})
+
+#------------- Fund Table -------------#
+@method_decorator(allowed_user(roles=['Admin', 'Editor']), name='dispatch')
+class OfficeTableView(ListView, FormView):    
+    model = Office
+    template_name = 'crud/instances/office/office.html'
+    context_object_name = 'office'
+    paginate_by = 25
+    form_class = OfficeForm
+
+    def get_queryset(self):
+        queryset = Office.objects.all()
+        search_query = self.request.GET.get("search", "").strip()
+        if search_query:
+            queryset = queryset.filter(office__icontains=search_query)
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form"] = self.get_form()
+        context["search_query"] = self.request.GET.get("search", "")
+        context['page_title'] = "Office Table"
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        if form.is_valid():
+            office = form.save()
+            messages.success(request, f"Office '{office.office}' added successfully!")
+            return redirect("office_table")
+        else:
+            messages.error(request, "Error adding office. Please check the input.")
+            return self.get(request, *args, **kwargs)
+
+@method_decorator(allowed_user(roles=['Admin', 'Editor']), name='dispatch')
+class OfficeDeleteView(View):
+    """Handles deleting a office via AJAX"""
+    def post(self, request, *args, **kwargs):
+        try:
+            office_id = request.POST.get("office_id")
+            office = Office.objects.get(id=office_id)
+            office_name = office.office
+            office.delete()
+            return JsonResponse({"success": True, "message": f"Office '{office_name}' deleted successfully!"})
+        except Office.DoesNotExist:
+            return JsonResponse({"success": False, "message": "Office not found."})
+
+@method_decorator(allowed_user(roles=['Admin', 'Editor']), name='dispatch')
+class YearTableView(ListView, FormView):    
+    model = Year
+    template_name = 'crud/instances/year/year.html'
+    context_object_name = 'year'
+    paginate_by = 25
+    form_class = YearForm
+
+    def get_queryset(self):
+        queryset = Year.objects.all()
+        search_query = self.request.GET.get("search", "").strip()
+        if search_query:
+            queryset = queryset.filter(year__icontains=search_query)
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form"] = self.get_form()
+        context["search_query"] = self.request.GET.get("search", "")
+        context['page_title'] = "Year Table"
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        if form.is_valid():
+            year = form.save()
+            messages.success(request, f"Year '{year.year}' added successfully!")
+            return redirect("year_table")
+        else:
+            messages.error(request, "Error adding year. Please check the input.")
+            return self.get(request, *args, **kwargs)
+
+@method_decorator(allowed_user(roles=['Admin', 'Editor']), name='dispatch')
+class YearDeleteView(View):
+    """Handles deleting a year via AJAX"""
+    def post(self, request, *args, **kwargs):
+        try:
+            year_id = request.POST.get("year_id")
+            year = Year.objects.get(id=year_id)
+            year_x = year.year
+            year.delete()
+            return JsonResponse({"success": True, "message": f"Year '{year_x}' deleted successfully!"})
+        except Year.DoesNotExist:
+            return JsonResponse({"success": False, "message": "Year not found."})
+
+
+
+
+
+
+
+
 

@@ -10,9 +10,10 @@ from apps.home import views
 from apps.home.views import ProjectListView, ProjectTableView, ProjectFlexTableView
 from apps.home.views import DonwloadTablePreview, export_data, UpdateDataView, UpdateHistoryView, UpdateHistoryActionView
 from apps.home.views import ImportAndPreviewView, discard_data, preview_merge_data, merge_selected_data
-from apps.home.views import CreateDataView, AddHistoryView, DeleteHistoryView, FundTableView, FundDeleteView, ProfileView, AdminProfileView
+from apps.home.views import CreateDataView, AddHistoryView, DeleteHistoryView, ProfileView, AdminProfileView
 from apps.home.views import project_chart_data
-
+from apps.home.views import FundTableView, CategoryTableView, SubCategoryTableView, OfficeTableView, YearTableView
+from apps.home.views import FundDeleteView, CategoryDeleteView, SubCategoryDeleteView, OfficeDeleteView, YearDeleteView
 urlpatterns = [
 
     # The home page
@@ -43,11 +44,22 @@ urlpatterns = [
     path('create-history/', AddHistoryView.as_view(), name='add-history'),
     path('history/delete/<int:pk>/', DeleteHistoryView.as_view(), name='delete_history'),
 
+    path("profile/", ProfileView.as_view(), name="profile"),    
+    path("adminprofile/", AdminProfileView.as_view(), name="admin_profile"),   
+
     path("funds/", FundTableView.as_view(), name="fund_table"),
     path("funds/delete/", FundDeleteView.as_view(), name="fund_delete"),
 
-    path("profile/", ProfileView.as_view(), name="profile"),    
-    path("adminprofile/", AdminProfileView.as_view(), name="admin_profile"),    
+    path("category/", CategoryTableView.as_view(), name="category_table"),
+    path("category/delete/", CategoryDeleteView.as_view(), name="category_delete"),
 
+    path("subcategory/", SubCategoryTableView.as_view(), name="subcategory_table"),
+    path("subcategory/delete/", SubCategoryDeleteView.as_view(), name="subcategory_delete"),
+
+    path("office/", OfficeTableView.as_view(), name="office_table"),
+    path("office/delete/", OfficeDeleteView.as_view(), name="office_delete"), 
+
+    path("year/", YearTableView.as_view(), name="year_table"),
+    path("year/delete/", YearDeleteView.as_view(), name="year_delete"), 
 
 ]

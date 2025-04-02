@@ -253,6 +253,51 @@ class FundSourceForm(forms.ModelForm):
                 'fund': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter New Fund'})
             }
 
+class CategoryForm(forms.ModelForm):
+    class Meta:
+            model = Category
+            fields = '__all__' 
+            widgets = {
+                'category': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter New Category'})
+            }
+
+class SubCategoryForm(forms.ModelForm):
+    class Meta:
+            model = SubCategory
+            fields = '__all__' 
+            widgets = {
+                'sub_category': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter New Sub Category'})
+            }
+
+class OfficeForm(forms.ModelForm):
+    class Meta:
+            model = Office
+            fields = '__all__' 
+            widgets = {
+                'office': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter New office'})
+            }
+
+class YearForm(forms.ModelForm):
+    class Meta:
+        model = Year
+        fields = '__all__'
+        widgets = {
+            'year': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'placeholder': 'Enter New Year'})
+        }
+
+    # Custom validation to ensure the year is a positive number
+    def clean_year(self):
+        year = self.cleaned_data.get('year')
+        
+        if year <= 0:
+            raise forms.ValidationError("Year must be a positive integer.")
+        
+        # Optionally, you can also check for reasonable year ranges, e.g. no future years
+        if year > 9999:
+            raise forms.ValidationError("Year must be a valid year (4 digits).")
+        
+        return year
+
 # ============================= Dump table Storage =============================================
 class UploadFileForm(forms.Form):
     file = forms.FileField()

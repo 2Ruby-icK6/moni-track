@@ -231,15 +231,34 @@ document.addEventListener("DOMContentLoaded", function () {
         localStorage.setItem("selectedColumns_preview", JSON.stringify(storedColumns));
     });
 
-    // Unselect All Columns
+    // Unselect All Columns, keeping the 'project_number' and 'project_name' columns selected
     unselectAllBtn.addEventListener("click", function () {
-        columnToggles.forEach(toggle => {
-            toggle.checked = false;
-            const tableCells = document.querySelectorAll(`td[data-column="${toggle.value}"], th[data-column="${toggle.value}"]`);
-            tableCells.forEach(cell => cell.style.display = "none");
-            storedColumns[toggle.value] = false;
-        });
-        localStorage.setItem("selectedColumns_preview", JSON.stringify(storedColumns));
+      columnToggles.forEach(toggle => {
+        // Skip unselecting 'project_number' and 'project_name' columns
+        if (toggle.value !== 'project_number' && toggle.value !== 'project_name') {
+          toggle.checked = false;
+          document.querySelectorAll(`[data-column='${toggle.value}']`).forEach(el => el.style.display = "none");
+          storedColumns[toggle.value] = false;
+        }
+      });
+
+      // Ensure 'project_number' and 'project_name' columns remain visible and checked
+      const projectNumberColumn = document.querySelector("#col-project_number");
+      if (projectNumberColumn) {
+        projectNumberColumn.checked = true;
+        document.querySelectorAll(`[data-column='project_number']`).forEach(el => el.style.display = "");
+      }
+      const projectNameColumn = document.querySelector("#col-project_name");
+      if (projectNameColumn) {
+        projectNameColumn.checked = true;
+        document.querySelectorAll(`[data-column='project_name']`).forEach(el => el.style.display = "");
+      }
+
+      // Store the visibility and checked status for these columns
+      storedColumns['project_number'] = true;
+      storedColumns['project_name'] = true;
+
+      localStorage.setItem("selectedColumns", JSON.stringify(storedColumns));
     });
 
     // Apply saved column settings on page load
