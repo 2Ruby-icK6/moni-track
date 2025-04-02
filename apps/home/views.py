@@ -32,7 +32,7 @@ import re
 import json
 from datetime import datetime
 
-from .utils import utils
+from utils.data_utils import excel_to_json, format_date_or_text, get_or_create_foreign_key, compare_project_fields, compare_contract_fields, compare_timeline_fields
 from django.utils.decorators import method_decorator
 from .decorators import unauthorized_user, allowed_user, admin_only
 
@@ -490,9 +490,9 @@ def export_data(request):
         sheet[f"N{start_row}"] = timeline.cd if timeline else None  # C.D
         sheet[f"O{start_row}"] = timeline.ntp_date.strftime('%Y-%m-%d') if timeline and timeline.ntp_date else None  # NTP DATE
         sheet[f"P{start_row}"] = timeline.extension if timeline else None  # NO. OF EXTENSION
-        sheet[f"Q{start_row}"] = utils.format_date_or_text(timeline.target_completion_date) if timeline else None  # TARGET COMPLETION DATE
-        sheet[f"R{start_row}"] = utils.format_date_or_text(timeline.revised_completion_date) if timeline else None  # REVISED COMPLETION DATE
-        sheet[f"S{start_row}"] = utils.format_date_or_text(timeline.date_completed) if timeline else None  # DATE COMPLETED
+        sheet[f"R{start_row}"] = format_date_or_text(timeline.revised_completion_date) if timeline else None  # REVISED COMPLETION DATE
+        sheet[f"S{start_row}"] = format_date_or_text(timeline.date_completed) if timeline else None  # DATE COMPLETED
+        sheet[f"Q{start_row}"] = format_date_or_text(timeline.target_completion_date) if timeline else None  # TARGET COMPLETION DATE
         sheet[f"T{start_row}"] = contract.quarter if contract else None  # AS OF MONTH YEAR
         sheet[f"U{start_row}"] = timeline.total_cost_incurred_to_date if timeline else None  # TOTAL COST INCURRED TO DATE
         sheet[f"V{start_row}"] = contract.procurement if contract else None  # MODE OF PROCUREMENT
@@ -735,13 +735,11 @@ class ImportAndPreviewView(View):
     template_name = "crud/file/import-file.html"
 
     def get(self, request):
-        """Handles GET requests - renders the form and paginated data preview."""
         form = UploadFileForm()
         context = self.get_context_data(request, form)
         return render(request, self.template_name, context)
 
     def post(self, request):
-        """Handles POST requests - processes file upload and data import."""
         form = UploadFileForm(request.POST, request.FILES)
 
         if form.is_valid():
@@ -753,15 +751,30 @@ class ImportAndPreviewView(View):
             try:
                 temp_json_path, data = self.process_file(file)
 
+                if not data:
+                    raise ValueError("Error: The uploaded file is empty or unreadable.")
+
                 quarter_column = self.detect_quarter_column(data)
                 if not quarter_column:
                     raise ValueError("Error: 'Quarter' column not found in the dataset.")
+                
+                expected_columns = {"NO.", "PROVINCIAL GOVERNMENT OF PALAWAN PROJECT NAME", "PROJECT ID", "PPDO CATEGORY", 
+                                    "PROJECT DESCRIPTION", "LOCATION", "MUNICIPALITY", "IMPLEMENTING OFFICE", "YEAR", 
+                                    "SOURCE OF FUND", "PROJECT COST", "CONTRACT COST", "C.D", "NTP DATE", "NO. OF EXTENSION", 
+                                    "TARGET COMPLETION DATE", "REVISED COMPLETION DATE", "DATE COMPLETED", quarter_column, 
+                                    "TOTAL COST INCURED TO DATE", "MODE OF PROCUREMENT", "GENERAL REMARKS", "PROJECT CONTRACTOR", 
+                                    "TIN NUMBER", "REASON"}
+                file_columns = set(data[0].keys())
+                
+                if not expected_columns.issubset(file_columns):
+                    raise ValueError("Error: The uploaded file has an incorrect format or missing required columns.")
 
-                # Clear previous imports before adding new data
+                errors = self.validate_data(data)
+                if errors:
+                    raise ValueError("Data validation failed: " + "; ".join(errors))
+
                 DumpRawData.objects.all().delete()
-
                 self.save_data(data, quarter_column)
-
                 os.remove(temp_json_path)
 
                 messages.success(request, "File uploaded and processed successfully! Preview the data before merging.")
@@ -775,30 +788,41 @@ class ImportAndPreviewView(View):
         return render(request, self.template_name, context)
 
     def process_file(self, file):
-        """Saves file temporarily, converts it to JSON, and returns data."""
         temp_excel_path = os.path.join(settings.MEDIA_ROOT, file.name)
         with open(temp_excel_path, "wb+") as destination:
             for chunk in file.chunks():
                 destination.write(chunk)
 
         temp_json_path = os.path.splitext(temp_excel_path)[0] + ".json"
-        utils.excel_to_json(temp_excel_path, temp_json_path)
+        try:
+            excel_to_json(temp_excel_path, temp_json_path)
+            with open(temp_json_path, "r", encoding="utf-8") as json_file:
+                data = json.load(json_file)
+        except Exception:
+            os.remove(temp_excel_path)
+            if os.path.exists(temp_json_path):
+                os.remove(temp_json_path)
+            return None, None
 
-        with open(temp_json_path, "r", encoding="utf-8") as json_file:
-            data = json.load(json_file)
-
-        os.remove(temp_excel_path)  # Remove Excel file after conversion
+        os.remove(temp_excel_path)
         return temp_json_path, data
 
     def detect_quarter_column(self, data):
-        """Finds the column name matching 'AS OF [MONTH] [YEAR]' format."""
         for key in data[0].keys():
             if re.search(r"AS OF [A-Z]+ \d{4}", key, re.IGNORECASE):
                 return key
         return None
 
+    def validate_data(self, data):
+        errors = []
+        for index, item in enumerate(data):
+            if not item.get("PROVINCIAL GOVERNMENT OF PALAWAN PROJECT NAME"):
+                errors.append(f"Row {index + 1}: Project Name is required.")
+            if not item.get("YEAR"):
+                errors.append(f"Row {index + 1}: Year is required.")
+        return errors
+
     def save_data(self, data, quarter_column):
-        """Saves the imported data into the database."""
         for item in data:
             DumpRawData.objects.create(
                 project_number=item.get("NO.", ""),
@@ -891,7 +915,6 @@ def discard_data(request):
     return redirect("import_file")
 
 #------------- Merge Preview -------------#
-@method_decorator(allowed_user(roles=['Admin', 'Editor']), name='dispatch')
 def preview_merge_data(request):
     dump_data = DumpRawData.objects.all()
     changes = []
@@ -925,7 +948,7 @@ def preview_merge_data(request):
             municipality = municipality_mapping.get(dump_entry.municipality)
             office = office_mapping.get(dump_entry.office)
             year = year_mapping.get(dump_entry.year)
-            fund = utils.get_or_create_foreign_key(fund_mapping, FundSource, dump_entry.fund, "fund")  # Auto-create fund
+            fund = get_or_create_foreign_key(fund_mapping, FundSource, dump_entry.fund, "fund")  # Auto-create fund
             remark = remark_mapping.get(dump_entry.remarks)
 
             # Create new Project entry
@@ -1043,89 +1066,6 @@ def preview_merge_data(request):
 
     return render(request, "crud/file/merge-preview.html", {"changes": changes, "new_projects": new_projects, "page_title": "Prview Merge Data"})
 
-def compare_project_fields(main_entry, dump_entry, foreign_key_fields):
-    """ Compare only fields that belong to the Project model, excluding 'sub_category' """
-    changes = []
-    project_fields = [field.name for field in Project._meta.fields]
-    ignored_fields = ["id", "updated_at", "sub_category"]
-
-    for field_name in project_fields:
-        if field_name in ignored_fields or not hasattr(dump_entry, field_name):
-            continue
-
-        old_value = getattr(main_entry, field_name, None)
-        new_value = getattr(dump_entry, field_name, None)
-
-        if field_name in foreign_key_fields:
-            mapping = foreign_key_fields[field_name]
-            old_value = str(old_value) if old_value else "-"
-            new_value = str(mapping.get(new_value, "-"))
-
-        old_value = str(old_value) if old_value is not None else "-"
-        new_value = str(new_value) if new_value is not None else "-"
-
-        if old_value != new_value:
-            changes.append({
-                "field_name": field_name,
-                "old_value": old_value,
-                "new_value": new_value
-            })
-
-    return changes
-
-def compare_contract_fields(contract_entry, dump_entry):
-    """ Compare only fields that belong to the Contract model """
-    changes = []
-    contract_fields = [field.name for field in Contract._meta.fields]
-
-    for field_name in contract_fields:
-        if field_name in ["id", "project"] or not hasattr(dump_entry, field_name):
-            continue
-
-        old_value = getattr(contract_entry, field_name, None)
-        new_value = getattr(dump_entry, field_name, None)
-
-        if field_name == "remarks":
-            old_value = old_value.remark if old_value else "-"
-            new_value = str(new_value) if new_value else "-"
-
-        old_value = str(old_value) if old_value is not None else "-"
-        new_value = str(new_value) if new_value is not None else "-"
-
-        if old_value != new_value:
-            changes.append({
-                "field_name": field_name,
-                "old_value": old_value,
-                "new_value": new_value
-            })
-
-    return changes
-
-def compare_timeline_fields(timeline_entry, dump_entry):
-    """ Compare only fields that belong to the ProjectTimeline model """
-    changes = []
-    timeline_fields = [field.name for field in ProjectTimeline._meta.fields]
-
-    for field_name in timeline_fields:
-        if field_name in ["id", "project"] or not hasattr(dump_entry, field_name):
-            continue
-
-        old_value = getattr(timeline_entry, field_name, None)
-        new_value = getattr(dump_entry, field_name, None)
-
-        old_value = str(old_value) if old_value is not None else "-"
-        new_value = str(new_value) if new_value is not None else "-"
-
-        if old_value != new_value:
-            changes.append({
-                "field_name": field_name,
-                "old_value": old_value,
-                "new_value": new_value
-            })
-
-    return changes
-
-@method_decorator(allowed_user(roles=['Admin', 'Editor']), name='dispatch')
 def merge_selected_data(request):
     if request.method == "POST":
         selected_entries = request.POST.getlist("selected_entries")

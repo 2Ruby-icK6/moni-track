@@ -259,7 +259,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!isNaN(value)) {
             el.innerText = (value * 100).toFixed(2) + "%";
         } else {
-            el.innerText = "-----";
+            el.innerText = "None";
         }
     });
 
@@ -269,7 +269,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!isNaN(value)) {
             el.innerText = "P " + value.toLocaleString("en-US");
         } else {
-            el.innerText = "-----";
+            el.innerText = "None";
         }
     });
 
