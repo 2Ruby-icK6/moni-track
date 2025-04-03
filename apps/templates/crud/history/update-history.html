@@ -16,12 +16,11 @@
     </div>
     <div class="card-body">
       <!-- Success Message -->
-      {% if messages %}
-      <div class="alert alert-success mt-3">
+      {% if message %}
           {% for message in messages %}
-          {{ message }}
+              <div class="alert {% if message.tags == 'error' %} alert-danger mt-3 text-white 
+              {% else %} alert-success mt-3 text-white {% endif %}">{{ message }}</div>  
           {% endfor %}
-      </div>
       {% endif %}
       <div class="table-responsive p-0">
         {% if history_entries %}

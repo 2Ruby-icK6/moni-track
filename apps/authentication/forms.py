@@ -6,6 +6,7 @@ Copyright (c) 2019 - present AppSeed.us
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User, Group
+from django.contrib.auth.hashers import check_password
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 
@@ -79,11 +80,51 @@ class ProfileUpdateForm(forms.ModelForm):
         }
 
 class PasswordUpdateForm(forms.Form):
-    """Form for updating user password."""
-    password = forms.CharField(
-        widget=forms.PasswordInput(attrs={"class": "form-control", "placeholder": "New Password"})
+    """Form for updating user password (basic validation only)."""
+    new_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={"class": "form-control", "placeholder": "New Password"}),
+        required=True
+    )
+    confirm_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={"class": "form-control", "placeholder": "Confirm New Password"}),
+        required=True
     )
 
+    def clean(self):
+        cleaned_data = super().clean()
+        new_password = cleaned_data.get("new_password")
+        confirm_password = cleaned_data.get("confirm_password")
+
+        if new_password != confirm_password:
+            raise ValidationError("New password and confirm password do not match.")
+
+        # You can include further validation of the password here if needed
+        return cleaned_data
+
+class UserCreateForm(forms.ModelForm):
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={"class": "form-control", "placeholder": "Enter Password"})
+    )
+
+    class Meta:
+        model = User
+        fields = ["username", "email", "password", "is_staff", "is_superuser"]
+        widgets = {
+            "username": forms.TextInput(attrs={"class": "form-control"}),
+            "email": forms.EmailInput(attrs={"class": "form-control"}),
+        }
+
+class UserRoleForm(forms.Form):
+    user = forms.ModelChoiceField(
+        queryset=User.objects.all(),
+        widget=forms.Select(attrs={"class": "form-control select2", 'data-placeholder': 'Select User'})
+    )
+    role = forms.ModelChoiceField(
+        queryset=Group.objects.all(),
+        widget=forms.Select(attrs={"class": "form-control select2", 'data-placeholder': 'Select Role'})
+    )
+
+# ============================= Form Table =============================================
 class UpdateForm(forms.ModelForm):
 
     search_project_number = forms.ModelChoiceField(
@@ -123,31 +164,7 @@ class UpdateForm(forms.ModelForm):
                 cleaned_data[field] = None
 
         return cleaned_data
-
-class UserCreateForm(forms.ModelForm):
-    password = forms.CharField(
-        widget=forms.PasswordInput(attrs={"class": "form-control", "placeholder": "Enter Password"})
-    )
-
-    class Meta:
-        model = User
-        fields = ["username", "email", "password", "is_staff", "is_superuser"]
-        widgets = {
-            "username": forms.TextInput(attrs={"class": "form-control"}),
-            "email": forms.EmailInput(attrs={"class": "form-control"}),
-        }
-
-class UserRoleForm(forms.Form):
-    user = forms.ModelChoiceField(
-        queryset=User.objects.all(),
-        widget=forms.Select(attrs={"class": "form-control select2", 'data-placeholder': 'Select User'})
-    )
-    role = forms.ModelChoiceField(
-        queryset=Group.objects.all(),
-        widget=forms.Select(attrs={"class": "form-control select2", 'data-placeholder': 'Select Role'})
-    )
-
-# ============================= Form Table =============================================
+    
 class ProjectForm(forms.ModelForm):
     class Meta:
         model = Project

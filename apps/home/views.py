@@ -21,6 +21,8 @@ from django.utils.dateparse import parse_date
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.hashers import make_password
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 
 from django.views import View
 from django.views.generic import ListView, FormView, DeleteView
@@ -1381,8 +1383,8 @@ class DeleteHistoryView(View):
         history_entry.delete()
 
         # Reset the auto-increment values
-        self.reset_auto_increment("monitrack.home_project", history_entry.project_number)
-        self.reset_auto_increment("monitrack.home_addprojecthistory", pk)
+        self.reset_auto_increment("home_project", history_entry.project_number)
+        self.reset_auto_increment("home_addprojecthistory", pk)
 
         messages.success(request, "History entry deleted successfully.")
         return redirect('add-history')
@@ -1399,7 +1401,7 @@ class ProfileView(View):
 
     def get(self, request):
         profile_form = ProfileUpdateForm(instance=request.user)
-        password_form = PasswordUpdateForm()
+        password_form = PasswordUpdateForm()  # No need to pass 'user' here
         return render(request, "accounts/profile/profile.html", {
             "profile_form": profile_form,
             "password_form": password_form,
@@ -1418,7 +1420,16 @@ class ProfileView(View):
 
         elif "change_password" in request.POST:
             if password_form.is_valid():
-                new_password = password_form.cleaned_data["password"]
+                new_password = password_form.cleaned_data["new_password"]
+
+                # Apply Django's built-in password validators
+                try:
+                    validate_password(new_password, request.user)
+                except ValidationError as e:
+                    messages.error(request, "Password error: " + ", ".join(e.messages))
+                    return redirect("profile")
+
+                # Update password if validation passes
                 request.user.set_password(new_password)
                 request.user.save()
                 update_session_auth_hash(request, request.user)  # Keeps user logged in
@@ -1426,9 +1437,10 @@ class ProfileView(View):
                 return redirect("profile")
 
         messages.error(request, "Error updating profile. Please check the form.")
-        return render(request, "profile.html", {
+        return render(request, "accounts/profile/profile.html", {
             "profile_form": profile_form,
-            "password_form": password_form
+            "password_form": password_form,
+            "page_title": "Profile"
         })
 
 @method_decorator(allowed_user(roles=['Admin']), name='dispatch')
@@ -1472,7 +1484,7 @@ class AdminProfileView(View):
         elif "change_password" in request.POST:
             password_form = PasswordUpdateForm(request.POST)
             if password_form.is_valid():
-                new_password = password_form.cleaned_data["password"]
+                new_password = password_form.cleaned_data["new_password"]
                 request.user.set_password(new_password)
                 request.user.save()
                 update_session_auth_hash(request, request.user)  # Keep admin logged in
@@ -1513,6 +1525,28 @@ class AdminProfileView(View):
                     messages.error(request, "Invalid role selected.")
 
                 return redirect("admin_profile")
+
+        elif "delete_user" in request.POST:
+            user_id = request.POST.get("user_id")
+            try:
+                user = User.objects.get(id=user_id)
+                user.delete()
+                messages.success(request, "User deleted successfully.")
+            except User.DoesNotExist:
+                messages.error(request, "User not found.")
+            return redirect("admin_profile")
+
+        elif "reset_password" in request.POST:
+            user_id = request.POST.get("user_id")
+            new_password = "defaultpassword123"  # Set a default password or generate one
+            try:
+                user = User.objects.get(id=user_id)
+                user.set_password(new_password)
+                user.save()
+                messages.success(request, f"Password reset successfully. New password: {new_password}")
+            except User.DoesNotExist:
+                messages.error(request, "User not found.")
+            return redirect("admin_profile")
 
         messages.error(request, "Error processing the request.")
         return redirect("admin_profile")

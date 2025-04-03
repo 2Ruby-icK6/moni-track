@@ -15,12 +15,13 @@
         </div>
 
         <div class="card-body">
-          <!-- Display messages -->
-          {% if messages %}
-            {% for message in messages %}
-              <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-            {% endfor %}
-          {% endif %}
+          <!-- Display Profile Update Messages -->
+          {% for message in messages %}
+            {% if "Profile" in message.message %}
+              <div class="alert {% if message.tags == 'error' %} alert-danger mt-3 text-white 
+              {% else %} alert-success mt-3 text-white {% endif %}">{{ message }}</div>  
+            {% endif %}
+          {% endfor %}
 
           <form method="post">
             {% csrf_token %}
@@ -30,6 +31,7 @@
                 <div class="form-group">
                   <label class="form-control-label">Username</label>
                   {{ profile_form.username }}
+                  <small class="form-text text-muted">Choose a unique username for this user. 150 characters or fewer. Letters, digits and @/./+/-/_ only.</small>
                 </div>
               </div>
               <div class="col-md-6">
@@ -56,13 +58,28 @@
 
           <hr class="horizontal dark">
           <p class="text-uppercase text-sm">Change Password</p>
+
+          <!-- Display Password Update Messages -->
+          {% for message in messages %}
+            {% if "Password" in message.message %}
+              <div class="alert {% if message.tags == 'error' %} alert-danger mt-3 text-white 
+              {% else %} alert-success mt-3 text-white {% endif %}">{{ message }}</div>  
+            {% endif %}
+          {% endfor %}
+
           <form method="post">
             {% csrf_token %}
             <div class="row">
               <div class="col-md-6">
                 <div class="form-group">
                   <label class="form-control-label">New Password</label>
-                  {{ password_form.password }}
+                  {{ password_form.new_password }}
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-control-label">Confirm Password</label>
+                  {{ password_form.confirm_password }}
                 </div>
               </div>
             </div>
